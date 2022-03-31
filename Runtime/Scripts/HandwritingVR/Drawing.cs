@@ -3,9 +3,10 @@ using UnityEngine;
 
 namespace HandwritingVR
 {
-  public class Drawing : Grabable
+  public class Drawing : MonoBehaviour
   {
-    public Material lineMaterial;
+  public Material lineMaterial;
+    // public char letter;
     public float lineWidth = 0.01f;
     public float maxSegmentDistance = 0.02f;
     public float minCornerAngle = 10;
@@ -13,14 +14,12 @@ namespace HandwritingVR
     public DrawGizmo gizmo;
     public bool letterDone;
 
-
     private LineRenderer _currentLine;
     private LineRenderer _lineGameObject;
     private float _sqrMaxSegmentDistance;
 
-    private new void Awake()
+    private void Awake()
     {
-      base.Awake();
       _sqrMaxSegmentDistance = maxSegmentDistance * maxSegmentDistance;
       
       var go = new GameObject("DrawLine", typeof(LineRenderer));
@@ -32,9 +31,8 @@ namespace HandwritingVR
       Debug.Log("Drawing: Awake");
     }
 
-    private new void Update()
+    private void Update()
     {
-      base.Update();
       if (!_currentLine) return;
       if (letterDone)
       {
@@ -42,12 +40,25 @@ namespace HandwritingVR
         {
           collectData.FinishedLetter();
           letterDone = false;
+          /*Debug.Log("LETTER "+letter);
+          collectData.FinishedLetter(letter);
+          letterDone = false;
+          letter = ' ';*/
+          
           Debug.Log("letter done before gizmo");
           if (gizmo != null)
           {
             Debug.Log("Gizmo set collect data");
             gizmo.SetCollectData(collectData);  
           }
+          Debug.Log("letter done before return");
+          /*if (collectData.GetLetterDone())
+          {
+            Destroy(_lineGameObject);
+            //Awake();
+          }*/
+          // collectData.SetLetterDone(false);
+          return;
         }
       }
 
@@ -107,7 +118,7 @@ namespace HandwritingVR
       _currentLine = null;
     }
 
-    public override void OnInteraction(Transform interactor, bool start)
+    public void OnInteraction(Transform interactor, bool start)
     {
       if (start)
       {
