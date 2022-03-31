@@ -41,11 +41,15 @@ namespace HandwritingVR
                 //Gizmos.DrawLine(new Vector3(0.0f, 0.0f, 0.0f), _collectData.GetSupportVector().normalized);
 
                 Gizmos.color = Color.cyan;
-                var projectedPoints = _collectData.GetProjectedPoints();
-                for (int i = 0; i < projectedPoints.Count-1; i++)
+                var projectedSegments = _collectData.GetProjectedSegments();
+                foreach (var segment in projectedSegments)
                 {
-                    Gizmos.DrawLine(projectedPoints[i], projectedPoints[i+1]);
+                    for (int i = 0; i < segment.Count-1; i++)
+                    {
+                        Gizmos.DrawLine(segment[i], segment[i+1]);
+                    }
                 }
+                
 
                 Gizmos.color = Color.magenta;
                 var boundingBox = _collectData.GetBoundingBox();
@@ -58,10 +62,13 @@ namespace HandwritingVR
                     }
                 }
 				
-                var normProjPoints = _collectData.GetNormalizedProjectedPoints();
-                for (int i = 0; i < normProjPoints.Count-1; i++)
+                var normProjPoints = _collectData.GetNormalizedSegments();
+                foreach (var segment in normProjPoints)
                 {
-                    Gizmos.DrawLine(normProjPoints[i],normProjPoints[i+1]);
+                    for (int i = 0; i < segment.Count-1; i++)
+                    {
+                        Gizmos.DrawLine(segment[i],segment[i+1]);
+                    }
                 }
             }
         }
