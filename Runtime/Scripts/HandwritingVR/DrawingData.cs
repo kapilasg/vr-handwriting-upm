@@ -198,10 +198,17 @@ namespace HandwritingVR
             _directVector1 = new Vector3(dirVec1[0], dirVec1[1], dirVec1[2]).normalized;
             _directVector2 = new Vector3(dirVec2[0], dirVec2[1], dirVec2[2]).normalized;
             _normalVector = new Vector3(normalVec[0], normalVec[1], normalVec[2]).normalized;
+            if (Camera.main != null)
+            {
+                var cameraVector = Camera.main.transform.forward;
+                Debug.Log("camVec: (x,y,z) (" + cameraVector.x + ", " + cameraVector.y + ", " + cameraVector.z + ")");
+
+            }
+
             Debug.Log("dirVec1: " + _directVector1);
-            Debug.Log("dirVec1: (x,y,z)" + _directVector1.x + ", " + _directVector1.y + ", " + _directVector1.z + ")");
-            Debug.Log("dirVec2: (x,y,z)" + _directVector2.x + ", " + _directVector2.y + ", " + _directVector2.z + ")");
-            Debug.Log("normVec: (x,y,z)" + _normalVector.x + ", " + _normalVector.y + ", " + _normalVector.z + ")");
+            Debug.Log("dirVec1: (x,y,z) (" + _directVector1.x + ", " + _directVector1.y + ", " + _directVector1.z + ")");
+            Debug.Log("dirVec2: (x,y,z) (" + _directVector2.x + ", " + _directVector2.y + ", " + _directVector2.z + ")");
+            Debug.Log("normVec: (x,y,z) (" + _normalVector.x + ", " + _normalVector.y + ", " + _normalVector.z + ")");
             _plane.SetNormalAndPosition(_normalVector, _supportVector);
             Debug.Log("plane: " + _plane);
         }
