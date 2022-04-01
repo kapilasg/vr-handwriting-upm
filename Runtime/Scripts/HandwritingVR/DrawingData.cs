@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Remoting.Messaging;
 using MathNet.Numerics.LinearAlgebra;
 using UnityEngine;
 using Plane = UnityEngine.Plane;
@@ -60,6 +62,26 @@ namespace HandwritingVR
             Debug.Log("DrawingData: Finished Letter");
             SetPoints();
             SetPlane();
+            List<List<Vector2>> points2D = GetNormalizedSegments();
+            List<Segment> segments = new List<Segment>();
+            for (int i = 0; i < points2D.Count; i++)
+            {
+                Segment s = new Segment(i, points2D[i], Get2DBoundingBox());
+                segments.Add(s);
+            }
+
+            Debug.Log("Finished Letter number of segments" + segments.Count);
+            Debug.Log("Finished Letter HL of s0" + segments[0].HL);
+            
+            
+            
+            Character letter = new Character('A', points2D.Count, segments);
+            string json = JsonUtility.ToJson(letter);
+            File.WriteAllText(Application.dataPath + "/fuzzyRules.json", json);
+            
+            
+            
+
             /*if (c != ' ')
             {
                 List<List<Vector2>> points2D = GetNormalizedSegments();
@@ -147,8 +169,9 @@ namespace HandwritingVR
 
         private void SetPlane()
         {
+            // TODO remove
             int numberOfPoints = _segments.Count;
-            if (numberOfPoints < 3)
+            if (numberOfPoints < 1)
             {
                 return;
             }
