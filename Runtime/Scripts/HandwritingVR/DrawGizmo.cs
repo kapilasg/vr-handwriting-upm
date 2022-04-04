@@ -50,17 +50,33 @@ namespace HandwritingVR
                     }
                 }
                 
-
-                Gizmos.color = Color.magenta;
                 var boundingBox = _collectData.GetBoundingBox();
-                for (int i = 0; i < boundingBox.Count-1; i++)
+                var bound2D = _collectData.Get2DBoundingBox();
+                Gizmos.color = Color.magenta;
+                Gizmos.DrawLine(boundingBox[0], boundingBox[1]);
+                Gizmos.DrawLine(bound2D[0], bound2D[1]);
+                
+                Gizmos.color = Color.green;
+                Gizmos.DrawLine(boundingBox[1], boundingBox[2]);
+                Gizmos.DrawLine(bound2D[1], bound2D[2]);
+                
+                Gizmos.color = Color.red;
+                Gizmos.DrawLine(boundingBox[2], boundingBox[3]);
+                Gizmos.DrawLine(bound2D[2], bound2D[3]);
+                
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawLine(boundingBox[3], boundingBox[0]);
+                Gizmos.DrawLine(bound2D[3], bound2D[0]);
+
+
+                /*for (int i = 0; i < boundingBox.Count-1; i++)
                 {
                     Gizmos.DrawLine(boundingBox[i], boundingBox[i+1]);
                     if (i == boundingBox.Count - 2)
                     {
                         Gizmos.DrawLine(boundingBox[i+1], boundingBox[0]);
                     }
-                }
+                }*/
 				
                 var normProjPoints = _collectData.GetNormalizedSegments();
                 foreach (var segment in normProjPoints)
