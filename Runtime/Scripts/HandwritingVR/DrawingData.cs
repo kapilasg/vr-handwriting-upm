@@ -195,14 +195,108 @@ namespace HandwritingVR
                 Debug.Log("dirVec1 and dirVec2 are orthogonal to each other!!!");
             }
 
-            _directVector1 = new Vector3(dirVec1[0], dirVec1[1], dirVec1[2]).normalized;
-            _directVector2 = new Vector3(dirVec2[0], dirVec2[1], dirVec2[2]).normalized;
+            var dv1 = new Vector3(dirVec1[0], dirVec1[1], dirVec1[2]).normalized;
+            var dv2 = new Vector3(dirVec2[0], dirVec2[1], dirVec2[2]).normalized;
             _normalVector = new Vector3(normalVec[0], normalVec[1], normalVec[2]).normalized;
+
+            var x = Vector3.Dot(dv1, Vector3.right);
+            var y = Vector3.Dot(dv2, Vector3.up);
+            var ux = Vector3.Dot(dv1, Vector3.up);
+            var ry = Vector3.Dot(dv2, Vector3.right);
+            
+            Debug.Log("x = " + x + ", y = " + y + ", ux = " + ux +", ry = " + ry);
+            // _dirVec1 soll nach rechts zeigen und _dirVec2 nach oben
+            _directVector1 = dv1;
+            _directVector2 = dv2;
+            if (x >= 0.5)
+            {
+                // dv1 zeigt nach rechts
+                Debug.Log("1");
+                if (y > 0.5)
+                {
+                    Debug.Log("2");
+                    // dv2 zeigt nach oben
+                    _directVector1 = dv1;
+                    _directVector2 = dv2;
+                }
+                if (y < -0.5)
+                {
+                    Debug.Log("3");
+                    // dv2 zeight nach unten
+                    _directVector1 = dv1;
+                    _directVector2 = -1 * dv2;
+                }
+            }
+            Debug.Log("4");
+            if (x < -0.5)
+            {
+                Debug.Log("5");
+                // dv1 zeigt nach links
+                if (y > 0.5)
+                {
+                    Debug.Log("5");
+                    // dv2 zeigt nach oben
+                    _directVector2 = dv2;
+                    _directVector1 = -1 * dv1;
+                }
+                if (y < -0.5)
+                {
+                    Debug.Log("6");
+                    // dv2 zeight nach unten
+                    _directVector2 = -1 * dv2;
+                    _directVector1 = -1 * dv1;
+                }
+            }
+            Debug.Log("7");
+            if (ux >= 0.5)
+            {
+                Debug.Log("8");
+                // dv1 zeigt nach oben soll aber nach rechts zeigen
+                if (ry > 0.5)
+                {
+                    Debug.Log("9");
+                    // dv2 zeigt nach rechts
+                    _directVector1 = dv2;
+                    _directVector2 = dv1;
+                }
+                if (ry < -0.5)
+                {
+                    Debug.Log("10");
+                    // dv2 zeight nach links
+                    _directVector1 = -1 * dv2;
+                    _directVector2 = dv1;
+                }
+            }
+            Debug.Log("11");
+            if (ux <= -0.5)
+            {
+                Debug.Log("12");
+                // dv1 zeigt nach unten soll aber nach rechts zeigen
+                if (ry > 0.5)
+                {
+                    Debug.Log("13");
+                    // dv2 zeigt nach rechts
+                    _directVector1 = dv2;
+                    _directVector2 = -1 * dv1;
+                }
+                if (ry < -0.5)
+                {
+                    Debug.Log("14");
+                    // dv2 zeight nach links
+                    _directVector1 = -1 * dv2;
+                    _directVector2 = -1 * dv1;
+                }
+            }
+
             if (Camera.main != null)
             {
                 var cameraVector = Camera.main.transform.forward;
                 Debug.Log("camVec: (x,y,z) (" + cameraVector.x + ", " + cameraVector.y + ", " + cameraVector.z + ")");
-
+                if (Vector3.Dot(_normalVector, cameraVector.normalized) < 0)
+                {
+                    Debug.Log("change normal direction");
+                    _normalVector *= -1;
+                }
             }
 
             Debug.Log("dirVec1: " + _directVector1);
@@ -221,7 +315,6 @@ namespace HandwritingVR
             var div = Vector3.Dot(_normalVector, _normalVector);
             result = v - (factor / div) * _normalVector;
 
-            // TODO convert 3D vectors to 2D vectors
             return result;
         }
 
@@ -312,7 +405,7 @@ namespace HandwritingVR
         public List<List<Vector3>> GetProjectedSegments()
         {
             _projectedSegments = new List<List<Vector3>>();
-            //Debug.Log("segment count"+_segments.Count);
+            Debug.Log("segment count"+_segments.Count);
             for (int i = 0; i < _segments.Count; i++)
             {
                 List<Vector3> projectedSegment = new List<Vector3>();
@@ -323,7 +416,7 @@ namespace HandwritingVR
 
                 _projectedSegments.Add(projectedSegment);
             }
-            //Debug.Log("projected segments" + _projectedSegments.ToString());
+            Debug.Log("projected segments count" + _projectedSegments.Count);
             return _projectedSegments;
         }
 
@@ -340,8 +433,11 @@ namespace HandwritingVR
             var uppLeftCorner = Get2DFrom3D(_boundingBox[3]);
             var llx = lowLeftCorner.x;
             var lly = lowLeftCorner.y;
-            var dx = lowrightCorner.x - lowLeftCorner.x;
-            var dy = uppLeftCorner.y - lowLeftCorner.y;
+            var dx = Math.Abs(lowrightCorner.x - lowLeftCorner.x);
+            var dy = Math.Abs(uppLeftCorner.y - lowLeftCorner.y);
+            var d = dx / dy;
+            Debug.Log("dx = " + dx);
+            Debug.Log("dy = " + dy);
 
             var matrixBuilder = Matrix<float>.Build;
             var vectorBuilder = Vector<float>.Build;
@@ -349,7 +445,7 @@ namespace HandwritingVR
             float[,] reflexArray = {{1, 0}, {0, -1}};
             var rotMatrix = matrixBuilder.DenseOfArray(rotArray);
             var reflexMatrix = matrixBuilder.DenseOfArray(reflexArray);
-            var transMatrix = rotMatrix; // rotMatrix.Multiply(reflexMatrix);
+            var transMatrix = rotMatrix.Multiply(reflexMatrix);
             foreach (var segment in _projectedSegments)
             {
                 List<Vector2> projSeg = new List<Vector2>();
@@ -360,12 +456,22 @@ namespace HandwritingVR
                     newPoint.x *= 1 / dx;
                     newPoint.y -= lly;
                     newPoint.y *= 1 / dy;
+                    
+                    if (d <= 1)
+                    {
+                        newPoint.x *= d;
+                    }
+                    else
+                    {
+                        newPoint.y *= (1 / d);
+                    }
 
-                    float[] varr = {newPoint.x, newPoint.y};
+                    /*float[] varr = {newPoint.x, newPoint.y};
                     var v = vectorBuilder.Dense(varr);
 
-                    var np = transMatrix.Multiply(v);
-                    projSeg.Add(new Vector2(np.At(0), np.At(1)));
+                    var np = transMatrix.Multiply(v);*/
+                    //projSeg.Add(new Vector2(np.At(0), np.At(1)));
+                    projSeg.Add(newPoint);
                 }
 
                 proj2D.Add(projSeg);
@@ -400,8 +506,13 @@ namespace HandwritingVR
             {
                 GetProjectedSegments();
             }
+            Debug.Log("projectedSegment1 " + _projectedSegments.Count);
+            if (_projectedSegments.Count == 0)
+            {
+                GetProjectedSegments();
+            }
 
-            // Debug.Log("projectedSegment " + _projectedSegments.Count);
+            Debug.Log("projectedSegment2 " + _projectedSegments.Count);
             var v = Vector3.Dot(_directVector1, _projectedSegments[0][0]);
             var w = Vector3.Dot(_directVector2, _projectedSegments[0][0]);
 
@@ -452,12 +563,12 @@ namespace HandwritingVR
                 _directVector1 * minX + _directVector2 * maxY
             };
 
-            /*
+            
             Debug.Log("Bounding Box "+ _boundingBox[0]);
             Debug.Log("Bounding Box "+ _boundingBox[1]);
             Debug.Log("Bounding Box "+ _boundingBox[2]);
             Debug.Log("Bounding Box "+ _boundingBox[3]);
-            */
+            
 
             return _boundingBox;
         }
