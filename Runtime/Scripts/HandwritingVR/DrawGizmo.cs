@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace HandwritingVR
@@ -7,6 +8,9 @@ namespace HandwritingVR
         public Color lineColor;
 
         private DrawingData _collectData;
+        private List<Vector3> _boundingBox;
+        private List<Vector2> _bound2D;
+        private List<List<Vector2>> _normProjPoints;
 
         public void SetCollectData(DrawingData data)
         {
@@ -49,26 +53,31 @@ namespace HandwritingVR
                         Gizmos.DrawLine(segment[i], segment[i+1]);
                     }
                 }
-                
-                var boundingBox = _collectData.GetBoundingBox();
-                var bound2D = _collectData.Get2DBoundingBox();
-                Gizmos.color = Color.magenta;
-                Gizmos.DrawLine(boundingBox[0], boundingBox[1]);
-                Gizmos.DrawLine(bound2D[0], bound2D[1]);
-                
-                Gizmos.color = Color.green;
-                Gizmos.DrawLine(boundingBox[1], boundingBox[2]);
-                Gizmos.DrawLine(bound2D[1], bound2D[2]);
-                
-                Gizmos.color = Color.red;
-                Gizmos.DrawLine(boundingBox[2], boundingBox[3]);
-                Gizmos.DrawLine(bound2D[2], bound2D[3]);
-                
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawLine(boundingBox[3], boundingBox[0]);
-                Gizmos.DrawLine(bound2D[3], bound2D[0]);
 
+                if (_boundingBox == null || _bound2D == null)
+                {
+                    _boundingBox = _collectData.GetBoundingBox();
+                    _bound2D = _collectData.Get2DBoundingBox();
+                }
+                else
+                {
+                    _bound2D = _collectData.Get2DBoundingBox();
+                    Gizmos.color = Color.magenta;
+                    Gizmos.DrawLine(_boundingBox[0], _boundingBox[1]);
+                    Gizmos.DrawLine(_bound2D[0], _bound2D[1]);
 
+                    Gizmos.color = Color.green;
+                    Gizmos.DrawLine(_boundingBox[1], _boundingBox[2]);
+                    Gizmos.DrawLine(_bound2D[1], _bound2D[2]);
+
+                    Gizmos.color = Color.red;
+                    Gizmos.DrawLine(_boundingBox[2], _boundingBox[3]);
+                    Gizmos.DrawLine(_bound2D[2], _bound2D[3]);
+
+                    Gizmos.color = Color.yellow;
+                    Gizmos.DrawLine(_boundingBox[3], _boundingBox[0]);
+                    Gizmos.DrawLine(_bound2D[3], _bound2D[0]);
+                }
                 /*for (int i = 0; i < boundingBox.Count-1; i++)
                 {
                     Gizmos.DrawLine(boundingBox[i], boundingBox[i+1]);
@@ -78,12 +87,19 @@ namespace HandwritingVR
                     }
                 }*/
 				
-                var normProjPoints = _collectData.GetNormalizedSegments();
-                foreach (var segment in normProjPoints)
+                Gizmos.color = Color.cyan;
+                if (_normProjPoints == null)
                 {
-                    for (int i = 0; i < segment.Count-1; i++)
+                    _normProjPoints = _collectData.GetNormalizedSegments();
+                }
+                else
+                {
+                    foreach (var segment in _normProjPoints)
                     {
-                        Gizmos.DrawLine(segment[i],segment[i+1]);
+                        for (int i = 0; i < segment.Count-1; i++)
+                        {
+                            Gizmos.DrawLine(segment[i],segment[i+1]);
+                        }
                     }
                 }
             }
