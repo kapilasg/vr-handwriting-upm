@@ -18,7 +18,6 @@ namespace HandwritingVR
         private Vector3 _normalVector;
         private Vector3 _directVector1;
         private Vector3 _directVector2;
-        private Plane _plane;
         private List<List<Vector3>> _projectedSegments;
         private List<Vector3> _boundingBox;
         private List<List<Vector2>> _normalizedSegments;
@@ -121,6 +120,7 @@ namespace HandwritingVR
             foreach (var line in _drawnLines)
             {
                 int numberOfPoints = line.positionCount;
+                Debug.Log("number of points in line ->" + numberOfPoints);
                 if (numberOfPoints <= 2)
                 {
                     // temporary solution for end of letter problem
@@ -303,14 +303,11 @@ namespace HandwritingVR
             Debug.Log("dirVec1: (x,y,z) (" + _directVector1.x + ", " + _directVector1.y + ", " + _directVector1.z + ")");
             Debug.Log("dirVec2: (x,y,z) (" + _directVector2.x + ", " + _directVector2.y + ", " + _directVector2.z + ")");
             Debug.Log("normVec: (x,y,z) (" + _normalVector.x + ", " + _normalVector.y + ", " + _normalVector.z + ")");
-            _plane.SetNormalAndPosition(_normalVector, _supportVector);
-            Debug.Log("plane: " + _plane);
         }
-
+        
         private Vector3 ProjectToPlane(Vector3 v)
         {
             Vector3 result;
-            var distance = _plane.GetDistanceToPoint(v);
             var factor = Vector3.Dot((v - _supportVector), _normalVector);
             var div = Vector3.Dot(_normalVector, _normalVector);
             result = v - (factor / div) * _normalVector;
@@ -389,12 +386,7 @@ namespace HandwritingVR
         {
             return _directVector2;
         }
-
-        // This method returns a Plane Object with smallest distance to all points.
-        public Plane GetPlane()
-        {
-            return _plane;
-        }
+        
 
         // This method returns the number of points collected so far.
         public int GetNumberOfPoints()
@@ -405,7 +397,7 @@ namespace HandwritingVR
         public List<List<Vector3>> GetProjectedSegments()
         {
             _projectedSegments = new List<List<Vector3>>();
-            Debug.Log("segment count"+_segments.Count);
+            // Debug.Log("segment count"+_segments.Count);
             for (int i = 0; i < _segments.Count; i++)
             {
                 List<Vector3> projectedSegment = new List<Vector3>();
@@ -416,7 +408,7 @@ namespace HandwritingVR
 
                 _projectedSegments.Add(projectedSegment);
             }
-            Debug.Log("projected segments count" + _projectedSegments.Count);
+            // Debug.Log("projected segments count" + _projectedSegments.Count);
             return _projectedSegments;
         }
 
@@ -436,8 +428,8 @@ namespace HandwritingVR
             var dx = Math.Abs(lowrightCorner.x - lowLeftCorner.x);
             var dy = Math.Abs(uppLeftCorner.y - lowLeftCorner.y);
             var d = dx / dy;
-            Debug.Log("dx = " + dx);
-            Debug.Log("dy = " + dy);
+            // Debug.Log("dx = " + dx);
+            // Debug.Log("dy = " + dy);
 
             var matrixBuilder = Matrix<float>.Build;
             var vectorBuilder = Vector<float>.Build;
@@ -506,13 +498,13 @@ namespace HandwritingVR
             {
                 GetProjectedSegments();
             }
-            Debug.Log("projectedSegment1 " + _projectedSegments.Count);
+            // Debug.Log("projectedSegment1 " + _projectedSegments.Count);
             if (_projectedSegments.Count == 0)
             {
                 GetProjectedSegments();
             }
 
-            Debug.Log("projectedSegment2 " + _projectedSegments.Count);
+            // Debug.Log("projectedSegment2 " + _projectedSegments.Count);
             var v = Vector3.Dot(_directVector1, _projectedSegments[0][0]);
             var w = Vector3.Dot(_directVector2, _projectedSegments[0][0]);
 
@@ -563,12 +555,12 @@ namespace HandwritingVR
                 _directVector1 * minX + _directVector2 * maxY
             };
 
-            
+            /*
             Debug.Log("Bounding Box "+ _boundingBox[0]);
             Debug.Log("Bounding Box "+ _boundingBox[1]);
             Debug.Log("Bounding Box "+ _boundingBox[2]);
             Debug.Log("Bounding Box "+ _boundingBox[3]);
-            
+            */
 
             return _boundingBox;
         }
