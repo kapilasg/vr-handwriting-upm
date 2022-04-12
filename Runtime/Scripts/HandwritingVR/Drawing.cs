@@ -45,13 +45,15 @@ namespace HandwritingVR
           letterDone = false;
           letter = ' ';*/
           
-          Debug.Log("letter done before gizmo");
+          /*
+           Debug.Log("letter done before gizmo");
           if (gizmo != null)
           {
             Debug.Log("Gizmo set collect data");
             gizmo.SetCollectData(collectData);  
           }
           Debug.Log("letter done before return");
+          */
           /*if (collectData.GetLetterDone())
           {
             Destroy(_lineGameObject);
