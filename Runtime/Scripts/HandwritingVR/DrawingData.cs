@@ -12,21 +12,19 @@ namespace HandwritingVR
     public class DrawingData : MonoBehaviour
     {
         private List<LineRenderer> _drawnLines;
-        private List<List<Vector3>> _segments;
+        private List<List<Vector3>> _segments3D;
+        private List<List<Vector2>> _segments2D;
+        
         private int _numberOfPoints;
         private Vector3 _supportVector;
         private Vector3 _normalVector;
         private Vector3 _directVector1;
         private Vector3 _directVector2;
-        private List<List<Vector3>> _projectedSegments;
-        private List<Vector3> _boundingBox;
-        private List<List<Vector2>> _normalizedSegments;
-        private Boolean letterDone = false;
-
+        
         public DrawingData()
         {
             _drawnLines = new List<LineRenderer>();
-            _segments = new List<List<Vector3>>();
+            _segments3D = new List<List<Vector3>>();
         }
 
         // Adds LineRenderer Object to the List _drawnLines.
@@ -58,29 +56,17 @@ namespace HandwritingVR
 
         public void FinishedLetter() // char c
         {
-            Debug.Log("DrawingData: Finished Letter");
             SetPoints();
-            SetPlane();
-            List<List<Vector2>> points2D = GetNormalizedSegments();
-            List<Segment> segments = new List<Segment>();
-            for (int i = 0; i < points2D.Count; i++)
-            {
-                Segment s = new Segment(i, points2D[i], Get2DBoundingBox());
-                segments.Add(s);
-            }
-
-            Debug.Log("Finished Letter number of segments" + segments.Count);
-            Debug.Log("Finished Letter HL of s0" + segments[0].HL);
+            Debug.Log("DrawingData: Finished Letter");
+            Debug.Log("number of _segments in 3D "+ _segments3D.Count);
+            CalcSegments2D();
             
-            
-            
+            /*
             Character letter = new Character('A', points2D.Count, segments);
             string json = JsonUtility.ToJson(letter);
             File.WriteAllText(Application.dataPath + "/fuzzyRules.json", json);
+            */
             
-            
-            
-
             /*if (c != ' ')
             {
                 List<List<Vector2>> points2D = GetNormalizedSegments();
@@ -96,22 +82,10 @@ namespace HandwritingVR
             letterDone = true;*/
         }
 
-        public Boolean GetLetterDone()
-        {
-            Debug.Log("GetLetterDone "+letterDone);
-            return letterDone;
-        }
-
-        public void SetLetterDone(Boolean done)
-        {
-            letterDone = done;
-            RemoveAllLines();
-        }
-
         // call this method when the character is finished drawing
         private void SetPoints()
         {
-            if (_segments == null)
+            if (_segments3D == null)
             {
                 Debug.Log("_points is null");
                 return;
@@ -141,9 +115,9 @@ namespace HandwritingVR
                         segmentPoints.Add(line.GetPosition(i));
                     }
 
-                    _segments.Add(segmentPoints);
+                    _segments3D.Add(segmentPoints);
 
-                    Debug.Log("_segments.Count = " + _segments.Count);
+                    Debug.Log("_segments.Count = " + _segments3D.Count);
 
                 }
                 /*
@@ -154,9 +128,9 @@ namespace HandwritingVR
             }
 
             int count = 0;
-            for (var index = 0; index < _segments.Count; index++)
+            for (var index = 0; index < _segments3D.Count; index++)
             {
-                var segment = _segments[index];
+                var segment = _segments3D[index];
                 for (int j = 0; j < segment.Count; j++)
                 {
                     count++;
@@ -166,19 +140,166 @@ namespace HandwritingVR
             _numberOfPoints = count;
             Debug.Log("_numberOfPoints" + _numberOfPoints);
         }
-
-        private void SetPlane()
+        
+        private void CalcSegments2D()
         {
-            // TODO remove
-            int numberOfPoints = _segments.Count;
-            if (numberOfPoints < 1)
-            {
-                return;
-            }
-
-            FindPlane();
+            Debug.Log("CalcSegments2D");
+            SegmentLines(ProjectSegments2D());
         }
 
+        private List<List<Vector2>> ProjectSegments2D()
+        {
+            var proj2D = new List<List<Vector2>>();
+            
+            FindPlane();
+            
+            // Project points to Plane in 3D space
+            var proj3D = new List<List<Vector3>>();
+            for (int i = 0; i < _segments3D.Count; i++)
+            {
+                List<Vector3> projectedSegment = new List<Vector3>();
+                for (int j = 0; j < _segments3D[i].Count; j++)
+                {
+                    projectedSegment.Add(ProjectToPlane(_segments3D[i][j]));
+                }
+
+                proj3D.Add(projectedSegment);
+            }
+
+            var boundBox3D = GetBoundingBox3D(proj3D);
+            
+            // calculate Normalized 2D Projections
+            var lowLeft = Get2DFrom3D(boundBox3D[0]);
+            var lowRight = Get2DFrom3D(boundBox3D[1]);
+            var uppLeft = Get2DFrom3D(boundBox3D[3]);
+            var dx = Math.Abs(lowRight.x - lowLeft.x);
+            var dy = Math.Abs(uppLeft.y - lowLeft.y);
+            var d = dx / dy;
+            
+            foreach (var segment in proj3D)
+            {
+                List<Vector2> projSeg2D = new List<Vector2>();
+                foreach (var point in segment)
+                {
+                    var newPoint = Get2DFrom3D(point);
+                    newPoint.x -= lowLeft.x;
+                    newPoint.x *= 1 / dx;
+                    newPoint.y -= lowLeft.y;
+                    newPoint.y *= 1 / dy;
+                    
+                    if (d <= 1)
+                    {
+                        newPoint.x *= d;
+                    }
+                    else
+                    {
+                        newPoint.y *= (1 / d);
+                    }
+                    projSeg2D.Add(newPoint);
+                }
+
+                proj2D.Add(projSeg2D);
+            }
+            
+            return proj2D;
+        }
+
+        private void SegmentLines(List<List<Vector2>> projectedSegments)
+        {
+            _segments2D = new List<List<Vector2>>(); // segment in 2D;
+            var tmpProjSeg = projectedSegments;
+            
+            // Find all Segments
+            // break continuous sharp angles, keep arcs
+            foreach (var line in tmpProjSeg)
+            {
+                // Segmentierung nur möglich wenn segment min. 8 Punkte
+                if (line.Count < 8)
+                {
+                    Debug.Log("Segment has less than 8 Points and can therefore not further be divided");
+                    List<Vector2> onlySegment = new List<Vector2>(line);
+                    _segments2D.Add(onlySegment);
+                    continue;
+                }
+
+                var startSeg = 0;
+                var segmInd = FindFirstSegmentIndex(line);
+                Debug.Log("Found 1. Segment: length = "+segmInd.numOfPoints+", lastSegment = "+segmInd.lastSegment);
+                List<Vector2> firstSegment = new List<Vector2>(
+                    line.GetRange(startSeg, segmInd.numOfPoints-startSeg));
+                _segments2D.Add(firstSegment);
+                
+                while (!segmInd.lastSegment)
+                {
+                    Debug.Log("Search for next Segment");
+                    startSeg = segmInd.numOfPoints + 1;
+                    segmInd = FindFirstSegmentIndex(line.GetRange(startSeg, line.Count-startSeg));
+                    Debug.Log("Found next Segment: length = "+segmInd.numOfPoints+", lastSegment = "+segmInd.lastSegment);
+                    List<Vector2> nextSegment = new List<Vector2>(
+                        line.GetRange(startSeg, segmInd.numOfPoints));
+                    _segments2D.Add(nextSegment);
+                }
+            }
+            Debug.Log("Number of 2D Segments: " + _segments2D.Count);
+        }
+
+        private (int numOfPoints,bool lastSegment) FindFirstSegmentIndex(List<Vector2> line)
+        {
+            // TODO check if received line has more than seven points
+            var index = 0;
+            var a1 = Vector2.Angle(Vector2.right, line[1] - line[0]);
+            var a2 = Vector2.Angle(Vector2.right, line[3] - line[2]);
+            var threshold = 10;
+            // Found Straight Line beginning Segment
+            if (a1 - a2 < threshold)
+            {
+                Debug.Log("Found straight line at the beginning");
+                // check rest of segment if it only consist of same angle
+                while (a1 - a2 < threshold && index + 4 < line.Count)
+                {
+                    a1 = Vector2.Angle(Vector2.right, line[index + 1] - line[index]);
+                    a2 = Vector2.Angle(Vector2.right, line[index + 3] - line[index + 2]);
+                    index++;
+                }
+                
+                if (line.Count - index + 1 < 4)
+                {
+                    Debug.Log("BUT the last points are not for own segment");
+                    Debug.Log("Therefore last segment of straight line was found");
+                    return (line.Count - 1, true);
+                }
+                else
+                {
+                    Debug.Log("Found end of straight line but not end of segment index: "+ index+1);
+                    return (index + 1, false);
+                }
+            }
+            else
+            {
+                // Arc was found at the beginning
+                Debug.Log("Found Arc at the beginning");
+                while (a1 - a2 > threshold && a1 - a2 < 60 && index + 4 < line.Count)
+                {
+                    // search for end of arc
+                    a1 = Vector2.Angle(Vector2.right, line[index + 1] - line[index]);
+                    a2 = Vector2.Angle(Vector2.right, line[index + 3] - line[index + 2]);
+                    index++;
+                }
+                
+                if (line.Count - index + 1 < 4)
+                {
+                    Debug.Log("BUT the last points are not for own segment");
+                    Debug.Log("Therefore last segment of Arc was found");
+                    return (line.Count - 1, true);
+                }
+                else
+                {
+                    Debug.Log("Found end of Arc but not end of segment");
+                    return (index + 1, false);
+                }
+            }
+        }
+        
         private void FindPlane()
         {
             Debug.Log("FindPlane() called");
@@ -304,28 +425,20 @@ namespace HandwritingVR
             Debug.Log("dirVec2: (x,y,z) (" + _directVector2.x + ", " + _directVector2.y + ", " + _directVector2.z + ")");
             Debug.Log("normVec: (x,y,z) (" + _normalVector.x + ", " + _normalVector.y + ", " + _normalVector.z + ")");
         }
-        
-        private Vector3 ProjectToPlane(Vector3 v)
-        {
-            Vector3 result;
-            var factor = Vector3.Dot((v - _supportVector), _normalVector);
-            var div = Vector3.Dot(_normalVector, _normalVector);
-            result = v - (factor / div) * _normalVector;
-
-            return result;
-        }
-
+  
         private Vector3 CalcSupportVector()
         {
             Debug.Log("CalcSupportVector() called");
             Vector3 center = new Vector3(0, 0, 0);
-            foreach (List<Vector3> segment in _segments)
+            _numberOfPoints = 0;
+            foreach (List<Vector3> segment in _segments3D)
             {
                 for (int i = 0; i < segment.Count; i++)
                 {
                     center.x += segment[i].x;
                     center.y += segment[i].y;
                     center.z += segment[i].z;
+                    _numberOfPoints++;
                 }
             }
 
@@ -343,14 +456,14 @@ namespace HandwritingVR
             float[,] vectorArray = new float[_numberOfPoints, 3];
             Debug.Log("numberOfPoints = " + _numberOfPoints);
             int count = 0;
-            for (int i = 0; i < _segments.Count; i++)
+            for (int i = 0; i < _segments3D.Count; i++)
             {
-                for (int j = 0; j < _segments[i].Count; j++)
+                for (int j = 0; j < _segments3D[i].Count; j++)
                 {
                     //Debug.Log("count =" + count + ", i =" + i + ", j =" + j);
-                    vectorArray[count, 0] = _segments[i][j].x;
-                    vectorArray[count, 1] = _segments[i][j].y;
-                    vectorArray[count, 2] = _segments[i][j].z;
+                    vectorArray[count, 0] = _segments3D[i][j].x;
+                    vectorArray[count, 1] = _segments3D[i][j].y;
+                    vectorArray[count, 2] = _segments3D[i][j].z;
                     count++;
                 }
             }
@@ -363,161 +476,33 @@ namespace HandwritingVR
             return v;
         }
 
-        // This method returns the supportVector (Focus point).
-        public Vector3 GetSupportVector()
+        private Vector3 ProjectToPlane(Vector3 v)
         {
-            return _supportVector;
-        }
+            Vector3 result;
+            var factor = Vector3.Dot((v - _supportVector), _normalVector);
+            var div = Vector3.Dot(_normalVector, _normalVector);
+            result = v - (factor / div) * _normalVector;
 
-        // This method returns the normal vector to create the plane.
-        public Vector3 GetNormalVector()
-        {
-            return _normalVector;
-        }
-
-        // This method returns a directional vector (can be used with GetDirectVector2() to span a plane).
-        public Vector3 GetDirectVector1()
-        {
-            return _directVector1;
-        }
-
-        // This method returns a directional vector (can be used with GetDirectVector1() to span a plane).
-        public Vector3 GetDirectVector2()
-        {
-            return _directVector2;
+            return result;
         }
         
-
-        // This method returns the number of points collected so far.
-        public int GetNumberOfPoints()
+        private List<Vector3> GetBoundingBox3D(List<List<Vector3>> projSeg3D)
         {
-            return _numberOfPoints;
-        }
-
-        public List<List<Vector3>> GetProjectedSegments()
-        {
-            _projectedSegments = new List<List<Vector3>>();
-            // Debug.Log("segment count"+_segments.Count);
-            for (int i = 0; i < _segments.Count; i++)
-            {
-                List<Vector3> projectedSegment = new List<Vector3>();
-                for (int j = 0; j < _segments[i].Count; j++)
-                {
-                    projectedSegment.Add(ProjectToPlane(_segments[i][j]));
-                }
-
-                _projectedSegments.Add(projectedSegment);
-            }
-            // Debug.Log("projected segments count" + _projectedSegments.Count);
-            return _projectedSegments;
-        }
-
-        public List<List<Vector2>> GetNormalizedSegments()
-        {
-            var proj2D = new List<List<Vector2>>();
-            if (_boundingBox == null)
-            {
-                var list = GetBoundingBox();
-            }
-
-            var lowLeftCorner = Get2DFrom3D(_boundingBox[0]);
-            var lowrightCorner = Get2DFrom3D(_boundingBox[1]);
-            var uppLeftCorner = Get2DFrom3D(_boundingBox[3]);
-            var llx = lowLeftCorner.x;
-            var lly = lowLeftCorner.y;
-            var dx = Math.Abs(lowrightCorner.x - lowLeftCorner.x);
-            var dy = Math.Abs(uppLeftCorner.y - lowLeftCorner.y);
-            var d = dx / dy;
-            // Debug.Log("dx = " + dx);
-            // Debug.Log("dy = " + dy);
-
-            var matrixBuilder = Matrix<float>.Build;
-            var vectorBuilder = Vector<float>.Build;
-            float[,] rotArray = {{0, 1}, {-1, 0}};
-            float[,] reflexArray = {{1, 0}, {0, -1}};
-            var rotMatrix = matrixBuilder.DenseOfArray(rotArray);
-            var reflexMatrix = matrixBuilder.DenseOfArray(reflexArray);
-            var transMatrix = rotMatrix.Multiply(reflexMatrix);
-            foreach (var segment in _projectedSegments)
-            {
-                List<Vector2> projSeg = new List<Vector2>();
-                foreach (var point in segment)
-                {
-                    var newPoint = Get2DFrom3D(point);
-                    newPoint.x -= llx;
-                    newPoint.x *= 1 / dx;
-                    newPoint.y -= lly;
-                    newPoint.y *= 1 / dy;
-                    
-                    if (d <= 1)
-                    {
-                        newPoint.x *= d;
-                    }
-                    else
-                    {
-                        newPoint.y *= (1 / d);
-                    }
-
-                    /*float[] varr = {newPoint.x, newPoint.y};
-                    var v = vectorBuilder.Dense(varr);
-
-                    var np = transMatrix.Multiply(v);*/
-                    //projSeg.Add(new Vector2(np.At(0), np.At(1)));
-                    projSeg.Add(newPoint);
-                }
-
-                proj2D.Add(projSeg);
-            }
-
-            /* Debug with bounded box projection:
-             List<Vector2> box2D = new List<Vector2>();
-             foreach (var corner in _boundingBox)
-            {
-                var corner2D = Get2DFrom3D(corner);
-                // shift and scale box 
-                corner2D.x -= llx;
-                corner2D.x *= 1 / dx;
-                corner2D.y -= lly;
-                corner2D.y *= 1 / dy;
-                float[] varr = new float[2];
-                varr[0] = corner2D.x;
-                varr[1] = corner2D.y;
-                var v = vectorBuilder.Dense(varr);
-                var np = transMatrix.Multiply(v);
-                Debug.Log("Box corners"+new Vector2(np.At(0), np.At(1)));
-
-                box2D.Add(new Vector2(np.At(0)+1, np.At(1)+1));
-            }*/
-
-            return proj2D;
-        }
-
-        public List<Vector3> GetBoundingBox()
-        {
-            if (_projectedSegments == null)
-            {
-                GetProjectedSegments();
-            }
-            // Debug.Log("projectedSegment1 " + _projectedSegments.Count);
-            if (_projectedSegments.Count == 0)
-            {
-                GetProjectedSegments();
-            }
 
             // Debug.Log("projectedSegment2 " + _projectedSegments.Count);
-            var v = Vector3.Dot(_directVector1, _projectedSegments[0][0]);
-            var w = Vector3.Dot(_directVector2, _projectedSegments[0][0]);
+            var v = Vector3.Dot(_directVector1, projSeg3D[0][0]);
+            var w = Vector3.Dot(_directVector2, projSeg3D[0][0]);
 
             float minX = v;
             float maxX = v;
             float minY = w;
             float maxY = w;
 
-            for (int i = 0; i < _projectedSegments.Count; i++)
+            for (int i = 0; i < projSeg3D.Count; i++)
             {
-                for (int j = 0; j < _projectedSegments[i].Count; j++)
+                for (int j = 0; j < projSeg3D[i].Count; j++)
                 {
-                    Vector3 point = _projectedSegments[i][j];
+                    Vector3 point = projSeg3D[i][j];
                     var vi = Vector3.Dot(_directVector1, point);
                     var vj = Vector3.Dot(_directVector2, point);
 
@@ -543,7 +528,7 @@ namespace HandwritingVR
                 }
             }
 
-            _boundingBox = new List<Vector3>
+            var boundingBox = new List<Vector3>
             {
                 // upper left corner
                 _directVector1 * minX + _directVector2 * minY,
@@ -562,61 +547,7 @@ namespace HandwritingVR
             Debug.Log("Bounding Box "+ _boundingBox[3]);
             */
 
-            return _boundingBox;
-        }
-
-        public List<Vector2> Get2DBoundingBox()
-        {
-
-            _normalizedSegments = GetNormalizedSegments();
-
-            Vector2 v = _normalizedSegments[0][0];
-            float minX = v.x;
-            float maxX = v.x;
-            float minY = v.y;
-            float maxY = v.y;
-            for (int i = 0; i < _normalizedSegments.Count; i++)
-            {
-                for (int j = 0; j < _normalizedSegments[i].Count; j++)
-                {
-                    Vector3 point = _normalizedSegments[i][j];
-                    if (point.x < minX)
-                    {
-                        minX = point.x;
-                    }
-
-                    if (point.x > maxX)
-                    {
-                        maxX = point.x;
-                    }
-
-                    if (point.y < minY)
-                    {
-                        minY = point.y;
-                    }
-
-                    if (point.y > maxY)
-                    {
-                        maxY = point.y;
-                    }
-
-                }
-            }
-
-            Vector2 vx = new Vector2(1, 0);
-            Vector2 vy = new Vector2(0, 1);
-            List<Vector2> box = new List<Vector2>
-            {
-                // lower left corner
-                vx * minX + vy * minY,
-                // lower right corner
-                vx * maxX + vy * minY,
-                // upper right corner
-                vx * maxX + vy * maxY,
-                // upper left corner
-                vx * minX + vy * maxY
-            };
-            return box;
+            return boundingBox;
         }
 
         private Vector2 Get2DFrom3D(Vector3 v)
@@ -626,5 +557,11 @@ namespace HandwritingVR
 
             return new Vector2(x, y);
         }
+
+        public List<List<Vector2>> Get2DSegments()
+        {
+            return _segments2D ?? null;
+        }
+
     }
 }
