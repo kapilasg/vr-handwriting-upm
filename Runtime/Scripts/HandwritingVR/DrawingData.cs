@@ -31,16 +31,16 @@ namespace HandwritingVR
         public void AddLine(LineRenderer line)
         {
             _drawnLines.Add(line);
-            Debug.Log("DrawingData: added Line");
+            //Debug.Log("DrawingData: added Line");
         }
 
         // Updates the last added line in _drawnLines with the new Line.
         public void UpdateLine(LineRenderer line)
         {
-            Debug.Log("DrawingData: updated Line");
+            //Debug.Log("DrawingData: updated Line");
             int n = _drawnLines.Count;
             _drawnLines[n - 1] = line;
-            Debug.Log("DrawingData: updated Line");
+            //Debug.Log("DrawingData: updated Line");
         }
 
         // Removes all lines in _drawnLines.
@@ -59,14 +59,17 @@ namespace HandwritingVR
             SetPoints();
             Debug.Log("DrawingData: Finished Letter");
             Debug.Log("number of _segments in 3D "+ _segments3D.Count);
-            CalcSegments2D();
-            
+            _segments2D = ProjectSegments2D();
+            Debug.Log(_segments2D);
+            Debug.Log("Seg2D count: "+_segments2D.Count);
+            SegmentLines();
+
             /*
             Character letter = new Character('A', points2D.Count, segments);
             string json = JsonUtility.ToJson(letter);
             File.WriteAllText(Application.dataPath + "/fuzzyRules.json", json);
             */
-            
+
             /*if (c != ' ')
             {
                 List<List<Vector2>> points2D = GetNormalizedSegments();
@@ -141,12 +144,6 @@ namespace HandwritingVR
             Debug.Log("_numberOfPoints" + _numberOfPoints);
         }
         
-        private void CalcSegments2D()
-        {
-            Debug.Log("CalcSegments2D");
-            SegmentLines(ProjectSegments2D());
-        }
-
         private List<List<Vector2>> ProjectSegments2D()
         {
             var proj2D = new List<List<Vector2>>();
@@ -204,23 +201,38 @@ namespace HandwritingVR
             return proj2D;
         }
 
-        private void SegmentLines(List<List<Vector2>> projectedSegments)
+        private void SegmentLines()
         {
-            _segments2D = new List<List<Vector2>>(); // segment in 2D;
-            var tmpProjSeg = projectedSegments;
-            
-            // Find all Segments
-            // break continuous sharp angles, keep arcs
+            // _segments2D = new List<List<Vector2>>(); // segment in 2D;
+            Debug.Log("(Before) Number of 2D Segments: " + _segments2D.Count);
+            var tmpProjSeg = new List<List<Vector2>>(_segments2D);
+            _segments2D = new List<List<Vector2>>();
+            Debug.Log("tmpProjSeg size "+tmpProjSeg.Count);
+            List<Vector2> segment = new List<Vector2>();
             foreach (var line in tmpProjSeg)
             {
-                // Segmentierung nur möglich wenn segment min. 8 Punkte
                 if (line.Count < 8)
                 {
                     Debug.Log("Segment has less than 8 Points and can therefore not further be divided");
-                    List<Vector2> onlySegment = new List<Vector2>(line);
-                    _segments2D.Add(onlySegment);
+                    segment = new List<Vector2>(line);
+                    _segments2D.Add(segment);
                     continue;
                 }
+                var segmInd = FindFirstSegmentIndex(line);
+                Debug.Log("segmInd num of points: "+segmInd.numOfPoints);
+                Debug.Log("segmInd is last segment: "+segmInd.lastSegment);
+                segment = new List<Vector2>(line.GetRange(0, segmInd.numOfPoints));
+                _segments2D.Add(segment);
+
+            }
+            
+            // Find all Segments
+            // break continuous sharp angles, keep arcs
+            /*
+            foreach (var line in tmpProjSeg)
+            {
+                // Segmentierung nur möglich wenn segment min. 8 Punkte
+                
 
                 var startSeg = 0;
                 var segmInd = FindFirstSegmentIndex(line);
@@ -240,16 +252,35 @@ namespace HandwritingVR
                     _segments2D.Add(nextSegment);
                 }
             }
-            Debug.Log("Number of 2D Segments: " + _segments2D.Count);
+            */
+            
+            Debug.Log("(After) Number of 2D Segments: " + _segments2D.Count);
         }
 
         private (int numOfPoints,bool lastSegment) FindFirstSegmentIndex(List<Vector2> line)
         {
-            // TODO check if received line has more than seven points
+            if (line.Count < 8)
+            {
+                return (line.Count - 1, true);
+            }
+
+
+            var angles = new List<int>();
+
+            for (int i = 0; i < line.Count-3; i++)
+            {
+                var aa = Vector2.Angle(Vector2.right, line[i+1] - line[i]);
+                var ab = Vector2.Angle(Vector2.right, line[i+3] - line[i+2]);
+                angles.Add((int)(aa-ab));
+            }
+            
+            
+            
+            Debug.Log("Length of line to segment: "+ line.Count);
             var index = 0;
             var a1 = Vector2.Angle(Vector2.right, line[1] - line[0]);
             var a2 = Vector2.Angle(Vector2.right, line[3] - line[2]);
-            var threshold = 10;
+            var threshold = 40;
             // Found Straight Line beginning Segment
             if (a1 - a2 < threshold)
             {
@@ -260,17 +291,21 @@ namespace HandwritingVR
                     a1 = Vector2.Angle(Vector2.right, line[index + 1] - line[index]);
                     a2 = Vector2.Angle(Vector2.right, line[index + 3] - line[index + 2]);
                     index++;
+                    Debug.Log("index (straight): "+ index);
                 }
-                
-                if (line.Count - index + 1 < 4)
+                Debug.Log("index (straight) at end: "+ index);
+                Debug.Log("index (straight) if cond.: "+ (line.Count - index + 1));
+                if (line.Count - index + 1 <= 4)
                 {
                     Debug.Log("BUT the last points are not for own segment");
                     Debug.Log("Therefore last segment of straight line was found");
+                    Debug.Log("index (straight after found): "+ index);
                     return (line.Count - 1, true);
                 }
                 else
                 {
-                    Debug.Log("Found end of straight line but not end of segment index: "+ index+1);
+                    Debug.Log("Found end of straight line but not end of segment index: "+ (index+1));
+                    Debug.Log("index (straight after found2): "+ index);
                     return (index + 1, false);
                 }
             }
@@ -284,17 +319,20 @@ namespace HandwritingVR
                     a1 = Vector2.Angle(Vector2.right, line[index + 1] - line[index]);
                     a2 = Vector2.Angle(Vector2.right, line[index + 3] - line[index + 2]);
                     index++;
+                    Debug.Log("index (arc): "+ index);
                 }
                 
-                if (line.Count - index + 1 < 4)
+                if (line.Count - index + 1 <= 4)
                 {
                     Debug.Log("BUT the last points are not for own segment");
                     Debug.Log("Therefore last segment of Arc was found");
+                    Debug.Log("index (arc after found): "+ index);
                     return (line.Count - 1, true);
                 }
                 else
                 {
                     Debug.Log("Found end of Arc but not end of segment");
+                    Debug.Log("index (straight after found2): "+ index);
                     return (index + 1, false);
                 }
             }
@@ -302,7 +340,7 @@ namespace HandwritingVR
         
         private void FindPlane()
         {
-            Debug.Log("FindPlane() called");
+            //Debug.Log("FindPlane() called");
             _supportVector = CalcSupportVector();
 
             var v = CalcDecomp();
@@ -325,84 +363,84 @@ namespace HandwritingVR
             var ux = Vector3.Dot(dv1, Vector3.up);
             var ry = Vector3.Dot(dv2, Vector3.right);
             
-            Debug.Log("x = " + x + ", y = " + y + ", ux = " + ux +", ry = " + ry);
+            //Debug.Log("x = " + x + ", y = " + y + ", ux = " + ux +", ry = " + ry);
             // _dirVec1 soll nach rechts zeigen und _dirVec2 nach oben
             _directVector1 = dv1;
             _directVector2 = dv2;
             if (x >= 0.5)
             {
                 // dv1 zeigt nach rechts
-                Debug.Log("1");
+                //Debug.Log("1");
                 if (y > 0.5)
                 {
-                    Debug.Log("2");
+                    //Debug.Log("2");
                     // dv2 zeigt nach oben
                     _directVector1 = dv1;
                     _directVector2 = dv2;
                 }
                 if (y < -0.5)
                 {
-                    Debug.Log("3");
+                    //Debug.Log("3");
                     // dv2 zeight nach unten
                     _directVector1 = dv1;
                     _directVector2 = -1 * dv2;
                 }
             }
-            Debug.Log("4");
+            //Debug.Log("4");
             if (x < -0.5)
             {
-                Debug.Log("5");
+                //Debug.Log("5");
                 // dv1 zeigt nach links
                 if (y > 0.5)
                 {
-                    Debug.Log("5");
+                    //Debug.Log("5");
                     // dv2 zeigt nach oben
                     _directVector2 = dv2;
                     _directVector1 = -1 * dv1;
                 }
                 if (y < -0.5)
                 {
-                    Debug.Log("6");
+                    //Debug.Log("6");
                     // dv2 zeight nach unten
                     _directVector2 = -1 * dv2;
                     _directVector1 = -1 * dv1;
                 }
             }
-            Debug.Log("7");
+            //Debug.Log("7");
             if (ux >= 0.5)
             {
-                Debug.Log("8");
+                //Debug.Log("8");
                 // dv1 zeigt nach oben soll aber nach rechts zeigen
                 if (ry > 0.5)
                 {
-                    Debug.Log("9");
+                    //Debug.Log("9");
                     // dv2 zeigt nach rechts
                     _directVector1 = dv2;
                     _directVector2 = dv1;
                 }
                 if (ry < -0.5)
                 {
-                    Debug.Log("10");
+                    //Debug.Log("10");
                     // dv2 zeight nach links
                     _directVector1 = -1 * dv2;
                     _directVector2 = dv1;
                 }
             }
-            Debug.Log("11");
+            //Debug.Log("11");
             if (ux <= -0.5)
             {
-                Debug.Log("12");
+                //Debug.Log("12");
                 // dv1 zeigt nach unten soll aber nach rechts zeigen
                 if (ry > 0.5)
                 {
-                    Debug.Log("13");
+                    //Debug.Log("13");
                     // dv2 zeigt nach rechts
                     _directVector1 = dv2;
                     _directVector2 = -1 * dv1;
                 }
                 if (ry < -0.5)
                 {
-                    Debug.Log("14");
+                    //Debug.Log("14");
                     // dv2 zeight nach links
                     _directVector1 = -1 * dv2;
                     _directVector2 = -1 * dv1;
@@ -412,23 +450,25 @@ namespace HandwritingVR
             if (Camera.main != null)
             {
                 var cameraVector = Camera.main.transform.forward;
-                Debug.Log("camVec: (x,y,z) (" + cameraVector.x + ", " + cameraVector.y + ", " + cameraVector.z + ")");
+                //Debug.Log("camVec: (x,y,z) (" + cameraVector.x + ", " + cameraVector.y + ", " + cameraVector.z + ")");
                 if (Vector3.Dot(_normalVector, cameraVector.normalized) < 0)
                 {
-                    Debug.Log("change normal direction");
+                    //Debug.Log("change normal direction");
                     _normalVector *= -1;
                 }
             }
 
-            Debug.Log("dirVec1: " + _directVector1);
+            /*
+             Debug.Log("dirVec1: " + _directVector1);
             Debug.Log("dirVec1: (x,y,z) (" + _directVector1.x + ", " + _directVector1.y + ", " + _directVector1.z + ")");
             Debug.Log("dirVec2: (x,y,z) (" + _directVector2.x + ", " + _directVector2.y + ", " + _directVector2.z + ")");
             Debug.Log("normVec: (x,y,z) (" + _normalVector.x + ", " + _normalVector.y + ", " + _normalVector.z + ")");
+            */
         }
   
         private Vector3 CalcSupportVector()
         {
-            Debug.Log("CalcSupportVector() called");
+            //Debug.Log("CalcSupportVector() called");
             Vector3 center = new Vector3(0, 0, 0);
             _numberOfPoints = 0;
             foreach (List<Vector3> segment in _segments3D)
@@ -442,19 +482,19 @@ namespace HandwritingVR
                 }
             }
 
-            Debug.Log("numberOfPoints in calcSupportvector = " + _numberOfPoints);
+            //Debug.Log("numberOfPoints in calcSupportvector = " + _numberOfPoints);
             center /= _numberOfPoints;
-            Debug.Log("center (x,y,z): (" + center.x + ", " + center.y + ", " + center.z + ")");
+            //Debug.Log("center (x,y,z): (" + center.x + ", " + center.y + ", " + center.z + ")");
             return center;
         }
 
         private Matrix<float> CalcDecomp()
         {
-            Debug.Log("CalcDecomp() called");
+            //Debug.Log("CalcDecomp() called");
             // make a matrix out of all points which is a vector list
             var A = Matrix<float>.Build;
             float[,] vectorArray = new float[_numberOfPoints, 3];
-            Debug.Log("numberOfPoints = " + _numberOfPoints);
+            //Debug.Log("numberOfPoints = " + _numberOfPoints);
             int count = 0;
             for (int i = 0; i < _segments3D.Count; i++)
             {
@@ -472,7 +512,7 @@ namespace HandwritingVR
             var decomp = a.Svd(true);
             var v = decomp.VT
                 .Transpose(); // returns 3x3 matrix where the first 2 colums are "Richtungvektoren" and the 3. is normal vector to plane.
-            Debug.Log("calc 3x3 matrix v = " + v.ToString());
+            //Debug.Log("calc 3x3 matrix v = " + v.ToString());
             return v;
         }
 
