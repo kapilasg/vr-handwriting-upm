@@ -36,8 +36,10 @@ namespace HandwritingVR
       if (!_currentLine) return;
       if (letterDone)
       {
+        Debug.Log("Calling Finished Letter (Drawing)");
         if (collectData != null)
         {
+          Debug.Log("Calling Finished Letter (Drawing)");
           collectData.FinishedLetter();
           letterDone = false;
           /*Debug.Log("LETTER "+letter);
@@ -45,15 +47,14 @@ namespace HandwritingVR
           letterDone = false;
           letter = ' ';*/
           
-          /*
-           Debug.Log("letter done before gizmo");
+          
+          Debug.Log("letter done before gizmo");
           if (gizmo != null)
           {
             Debug.Log("Gizmo set collect data");
             gizmo.SetCollectData(collectData);  
           }
           Debug.Log("letter done before return");
-          */
           /*if (collectData.GetLetterDone())
           {
             Destroy(_lineGameObject);

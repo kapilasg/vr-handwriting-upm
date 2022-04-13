@@ -80,6 +80,7 @@ namespace HandwritingVR
 				
                 Gizmos.color = Color.cyan;
                 _proj2D = _collectData.Get2DSegments();
+                Debug.Log("OnDrawGizmos");
                 if (_proj2D is null) return;
                 foreach (var segment in _proj2D)
                 {
