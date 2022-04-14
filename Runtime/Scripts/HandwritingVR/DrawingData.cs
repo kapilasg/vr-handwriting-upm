@@ -120,7 +120,7 @@ namespace HandwritingVR
 
                     _segments3D.Add(segmentPoints);
 
-                    Debug.Log("_segments.Count = " + _segments3D.Count);
+                    Debug.Log("_segments3D.Count = " + _segments3D.Count);
 
                 }
                 /*
@@ -223,60 +223,85 @@ namespace HandwritingVR
                 Debug.Log("segmInd is last segment: "+segmInd.lastSegment);
                 segment = new List<Vector2>(line.GetRange(0, segmInd.numOfPoints));
                 _segments2D.Add(segment);
-
-            }
-            
-            // Find all Segments
-            // break continuous sharp angles, keep arcs
-            /*
-            foreach (var line in tmpProjSeg)
-            {
-                // Segmentierung nur möglich wenn segment min. 8 Punkte
-                
-
-                var startSeg = 0;
-                var segmInd = FindFirstSegmentIndex(line);
-                Debug.Log("Found 1. Segment: length = "+segmInd.numOfPoints+", lastSegment = "+segmInd.lastSegment);
-                List<Vector2> firstSegment = new List<Vector2>(
-                    line.GetRange(startSeg, segmInd.numOfPoints-startSeg));
-                _segments2D.Add(firstSegment);
-                
+                var restStartIndex = 0;
                 while (!segmInd.lastSegment)
                 {
-                    Debug.Log("Search for next Segment");
-                    startSeg = segmInd.numOfPoints + 1;
-                    segmInd = FindFirstSegmentIndex(line.GetRange(startSeg, line.Count-startSeg));
-                    Debug.Log("Found next Segment: length = "+segmInd.numOfPoints+", lastSegment = "+segmInd.lastSegment);
-                    List<Vector2> nextSegment = new List<Vector2>(
-                        line.GetRange(startSeg, segmInd.numOfPoints));
+                    Debug.Log("In segmenting while loop!");
+                    restStartIndex = segmInd.numOfPoints;
+                    var restSegment = new List<Vector2>(
+                        line.GetRange(restStartIndex, line.Count-restStartIndex));
+                    segmInd = FindFirstSegmentIndex(restSegment);
+                    var nextSegment = new List<Vector2>(line.GetRange(restStartIndex, segmInd.numOfPoints));
                     _segments2D.Add(nextSegment);
                 }
             }
-            */
-            
+
             Debug.Log("(After) Number of 2D Segments: " + _segments2D.Count);
         }
 
         private (int numOfPoints,bool lastSegment) FindFirstSegmentIndex(List<Vector2> line)
         {
+            Debug.Log("(FindFirstSegment) number of points in line: "+ line.Count);
             if (line.Count < 8)
             {
-                return (line.Count - 1, true);
+                Debug.Log("Too short to segment"+ line.Count);
+                return (line.Count, true);
             }
-
-
-            var angles = new List<int>();
-
-            for (int i = 0; i < line.Count-3; i++)
+            
+            // Just a straight line:
+            var avrAngle = Vector2.Angle(Vector2.right, line[^1] - line[0]);
+            var calcAvrAngle = 0f;
+            var calcLength = 0f;
+            for (int i = 0; i < line.Count-1; i++)
             {
-                var aa = Vector2.Angle(Vector2.right, line[i+1] - line[i]);
-                var ab = Vector2.Angle(Vector2.right, line[i+3] - line[i+2]);
-                angles.Add((int)(aa-ab));
+                calcAvrAngle += Vector2.Angle(Vector2.right, line[i+1] - line[i]);
+                calcLength += Vector2.Distance(line[i], line[i + 1]);
             }
+            calcAvrAngle /= line.Count;
+            Debug.Log("avrAngle: "+ avrAngle);
+            Debug.Log("calcAvrAngle: "+ calcAvrAngle);
+            Debug.Log("avrLength: "+ Vector2.Distance(line[0], line[^1]));
+            Debug.Log("calcLength: "+ calcLength);
+            Debug.Log("avrAngle - calcAvrAngle: " + Math.Abs(avrAngle - calcAvrAngle));
+            if (Math.Abs(avrAngle - calcAvrAngle) < 25 
+                && Math.Abs(Vector2.Distance(line[0], line[^1]) - calcLength) < 0.2)
+            {
+                Debug.Log("Just a straight line.");
+                return (line.Count, true);
+            }
+
+            var counter = 4; // Each segment has at least 4 points.
             
+            for (int i = 0; i < line.Count-5; i++) // Dont look at first and last points (Ungenau/Zittrige hand)
+            {
+                // var aa = Vector2.Angle(Vector2.right, line[i+2] - line[i]);
+                // var ab = Vector2.Angle(Vector2.right, line[i+4] - line[i+2]);
+                var a1 = Vector2.SignedAngle(Vector2.right, line[i+2] - line[i]);
+                var a2 = Vector2.SignedAngle(Vector2.right, line[i+4] - line[i+2]);
+                if (a1 < 0) a1 += 360;
+                if (a2 < 0) a2 += 360;
+                
+                // Debug.Log("angle1 "+i+": " + (int)(aa-ab) + ", (a1 = "+aa+", a2 = "+ab+")");
+                Debug.Log("angle "+i+": " + (int)(a1-a2) + ", (a1 = "+(int)(a1)+", a2 = "+(int)(a2)+")");
+                
+                if (Math.Abs(a1 - a2) < 140)
+                {
+                    Debug.Log("Unterbruch!!!"); // Don't compress debugs!!! 
+                }
+                
+                //angles.Add((int)(aa-ab));
+            }
+            /*Debug.Log("(FindFirstSegment) number of points in line: "+ line.Count);
+            Debug.Log("(FindFirstSegment) number of angles: "+ angles.Count);
+            for (int i = 0; i < angles.Count; i++)
+            {
+                Debug.Log("angle "+i+": " + angles[i]);
+            }*/
             
-            
-            Debug.Log("Length of line to segment: "+ line.Count);
+            return (line.Count, true);
+
+
+            /*/Debug.Log("Length of line to segment: "+ line.Count);
             var index = 0;
             var a1 = Vector2.Angle(Vector2.right, line[1] - line[0]);
             var a2 = Vector2.Angle(Vector2.right, line[3] - line[2]);
@@ -336,6 +361,7 @@ namespace HandwritingVR
                     return (index + 1, false);
                 }
             }
+            */
         }
         
         private void FindPlane()
