@@ -249,48 +249,145 @@ namespace HandwritingVR
             }
             
             // Just a straight line:
-            var avrAngle = Vector2.Angle(Vector2.right, line[^1] - line[0]);
+            // var avrAngle = Vector2.Angle(Vector2.right, line[^1] - line[0]);
             var calcAvrAngle = 0f;
             var calcLength = 0f;
-            for (int i = 0; i < line.Count-1; i++)
+            var counter = 0;
+            for (int i = 2; i < line.Count-2; i++)
             {
-                calcAvrAngle += Vector2.Angle(Vector2.right, line[i+1] - line[i]);
+                // calcAvrAngle += Vector2.Angle(Vector2.right, line[i+1] - line[i]);
+                calcAvrAngle += Vector2.Angle(line[i+2] - line[i], line[i-2] - line[i]);
+                counter++;
+
+            }
+            calcAvrAngle /= counter;
+            for (int i = 0; i < line.Count - 1; i++)
+            {
                 calcLength += Vector2.Distance(line[i], line[i + 1]);
             }
-            calcAvrAngle /= line.Count;
-            Debug.Log("avrAngle: "+ avrAngle);
-            Debug.Log("calcAvrAngle: "+ calcAvrAngle);
+            //Debug.Log("avrAngle: "+ avrAngle);
+            //Debug.Log("calcAvrAngle: "+ calcAvrAngle);
             Debug.Log("avrLength: "+ Vector2.Distance(line[0], line[^1]));
             Debug.Log("calcLength: "+ calcLength);
-            Debug.Log("avrAngle - calcAvrAngle: " + Math.Abs(avrAngle - calcAvrAngle));
-            if (Math.Abs(avrAngle - calcAvrAngle) < 25 
-                && Math.Abs(Vector2.Distance(line[0], line[^1]) - calcLength) < 0.2)
+            Debug.Log("AvrAngle: " + calcAvrAngle);
+            // Debug.Log("avrAngle - calcAvrAngle: " + Math.Abs(avrAngle - calcAvrAngle));
+            // Math.Abs(avrAngle - calcAvrAngle) < 25 
+            if (165 <= calcAvrAngle && calcAvrAngle <= 195 
+                && Math.Abs(Vector2.Distance(line[0], line[^1]) - calcLength) < 0.15)
             {
                 Debug.Log("Just a straight line.");
                 return (line.Count, true);
             }
 
-            var counter = 4; // Each segment has at least 4 points.
-            
-            for (int i = 0; i < line.Count-5; i++) // Dont look at first and last points (Ungenau/Zittrige hand)
+            // var counter = 4; // Each segment has at least 4 points.
+
+            for (int i = 2; i < line.Count - 3; i++) // Dont look at first and last points (Ungenau/Zittrige hand)
             {
-                // var aa = Vector2.Angle(Vector2.right, line[i+2] - line[i]);
-                // var ab = Vector2.Angle(Vector2.right, line[i+4] - line[i+2]);
-                var a1 = Vector2.SignedAngle(Vector2.right, line[i+2] - line[i]);
-                var a2 = Vector2.SignedAngle(Vector2.right, line[i+4] - line[i+2]);
-                if (a1 < 0) a1 += 360;
-                if (a2 < 0) a2 += 360;
-                
-                // Debug.Log("angle1 "+i+": " + (int)(aa-ab) + ", (a1 = "+aa+", a2 = "+ab+")");
-                Debug.Log("angle "+i+": " + (int)(a1-a2) + ", (a1 = "+(int)(a1)+", a2 = "+(int)(a2)+")");
-                
-                if (Math.Abs(a1 - a2) < 140)
+                var right = line[i + 2] - line[i];
+                var left = line[i - 2] - line[i];
+                var angle = Vector2.Angle(right, left);
+                Debug.Log("Angle "+i+" in between: "+ angle); // Is weighting necessary?
+                if (angle < 120) // consider < 130 for small drawings!!!
                 {
-                    Debug.Log("Unterbruch!!!"); // Don't compress debugs!!! 
+                    Debug.Log("Interesting?");
+                    // Look at the next few points to see if they have a smaller angle !!!
+                    // TODO check next three angles if there are three angles left
+                    if (i + 4 < line.Count)
+                    {
+                        var nextAngle = Vector2.Angle(line[i + 3] - line[i+1], line[i - 1] - line[i+1]);
+                        var nextAngle2 = Vector2.Angle(line[i + 4] - line[i+2], line[i] - line[i+2]);
+                        // compare all angles -> smallest angle is breaking point
+                        if (angle < nextAngle && angle < nextAngle2)
+                        {
+                            // breaking point i
+                            // check how many points are left
+                            var pointsLeft = line.Count - i;
+                            if (pointsLeft < 4)
+                            {
+                                return (line.Count, true);
+                            }
+                            else
+                            {
+                                return (i + 1, false);
+                            }
+                        }
+
+                        if (nextAngle < angle && nextAngle < nextAngle2)
+                        {
+                            // breaking point i+1
+                            var pointsLeft = line.Count - i+1;
+                            if (pointsLeft < 4)
+                            {
+                                return (line.Count, true);
+                            }
+                            else
+                            {
+                                return (i + 2, false);
+                            }
+                        }
+
+                        if (nextAngle2 < angle && nextAngle2 < nextAngle)
+                        {
+                            // breaking point i+2
+                            var pointsLeft = line.Count - i+2;
+                            if (pointsLeft < 4)
+                            {
+                                return (line.Count, true);
+                            }
+                            else
+                            {
+                                return (i + 3, false);
+                            }
+                        }
+                    }
+
+                    if (i + 3 < line.Count)
+                    {
+                        var nextAngle = Vector2.Angle(line[i + 3] - line[i+1], line[i - 1] - line[i+1]);
+                        if (angle < nextAngle)
+                        {
+                            // breaking point i
+                            // check how many points are left
+                            var pointsLeft = line.Count - i;
+                            if (pointsLeft < 4)
+                            {
+                                return (line.Count, true);
+                            }
+                            else
+                            {
+                                return (i + 1, false);
+                            }
+                        }
+                        else
+                        {
+                            var pointsLeft = line.Count - i+1;
+                            if (pointsLeft < 4)
+                            {
+                                return (line.Count, true);
+                            }
+                            else
+                            {
+                                return (i + 2, false);
+                            }
+                        }
+
+                    }
+                    var points = line.Count - i;
+                    if (points < 4)
+                    {
+                        return (line.Count, true);
+                    }
+                    else
+                    {
+                        return (i + 1, false);
+                    }
+                    // TODO check how many points are left
+                    //  if less than x than add them to current segment
+                    //  else just return the short segment
                 }
-                
-                //angles.Add((int)(aa-ab));
             }
+            
+            
             /*Debug.Log("(FindFirstSegment) number of points in line: "+ line.Count);
             Debug.Log("(FindFirstSegment) number of angles: "+ angles.Count);
             for (int i = 0; i < angles.Count; i++)
