@@ -488,5 +488,50 @@ namespace HandwritingVR
                 return "ERROR";
             }
         }
+
+        public int CompareSegments(Segment s)
+        {
+            int numberOfSameValues = 0;
+            // HP
+            if (HP.Equals(s.HP)) numberOfSameValues++;
+            // VP
+            if (VP.Equals(s.VP)) numberOfSameValues++;
+            // HLEN
+            if (HLEN.Equals(s.HLEN)) numberOfSameValues++;
+            // VLEN
+            if (VLEN.Equals(s.VLEN)) numberOfSameValues++;
+            // SLEN Slant Length
+            if (SLEN.Equals(s.SLEN)) numberOfSameValues++;
+            // SX Center X
+            if (SX.Equals(s.SX)) numberOfSameValues++;
+            // SY Center Y
+            if (SY.Equals(s.SY)) numberOfSameValues++;
+            // MSTR Straightness
+            if (MSTR.Equals(s.MSTR)) numberOfSameValues++;
+            // MARC Arc-ness
+            if (MARC.Equals(s.MARC)) numberOfSameValues++;
+            // VL Vertical line
+            if (VL.Equals(s.VL)) numberOfSameValues++;
+            // HL Horizontal line
+            if (HL.Equals(s.HL)) numberOfSameValues++;
+            // Positive slant
+            if (PS.Equals(s.PS)) numberOfSameValues++;
+            // Negative slant
+            if (NS.Equals(s.NS)) numberOfSameValues++;
+            // AL A-Like
+            if (AL.Equals(s.AL)) numberOfSameValues++;
+            // DL D-Like
+            if (DL.Equals(s.DL)) numberOfSameValues++;
+            // CL C-Like
+            if (CL.Equals(s.CL)) numberOfSameValues++;
+            // UL U-Like
+            if (UL.Equals(s.UL)) numberOfSameValues++;
+            // OL O-Like
+            if (OL.Equals(s.OL)) numberOfSameValues++;
+            // Is a dot
+            if (isDot == s.isDot) numberOfSameValues++;
+// 19
+            return numberOfSameValues;
+        }
     }
 }
