@@ -6,7 +6,7 @@ namespace HandwritingVR
 {
 
     [Serializable]
-    class Character
+    public class Character
     {
         public char letter;
         public int numberOfSegments;
@@ -17,13 +17,20 @@ namespace HandwritingVR
             letter = c;
             numberOfSegments = numOfSegments;
             segments = list;
-            Debug.Log("Character created!!" + c + "number of segments" + numOfSegments);
+            Debug.Log("Character "+ c +" created!! With number of segments: " + numOfSegments);
         }
-
-        // This method is only called in trainings mode
-        public void WriteFuzzyRuleBase()
+        
+        
+        public int CompareCharacters(List<Segment> providedSegments)
         {
+            int compareValue = 0;
 
+            for (int i = 0; i < segments.Count; i++)
+            {
+                int s = segments[i].CompareSegments(providedSegments[i]);
+                compareValue += s;
+            }
+            return compareValue;
         }
     }
 }
