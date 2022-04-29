@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Security.Cryptography;
 using UnityEngine;
+// using UnityEngine.InputSystem;
 
 namespace HandwritingVR
 {
@@ -13,10 +15,14 @@ namespace HandwritingVR
     public DrawingData collectData;
     public DrawGizmo gizmo;
     public bool letterDone;
-
+    //public InputAction letterDoneAction;
+    
+    private float _timeLeft;
     private LineRenderer _currentLine;
     private LineRenderer _lineGameObject;
     private float _sqrMaxSegmentDistance;
+    // private List<LineRenderer> _lines;
+    // private List<GameObject> _lineObjects;
 
     private void Awake()
     {
@@ -28,43 +34,51 @@ namespace HandwritingVR
       _lineGameObject.widthMultiplier = lineWidth;
       _lineGameObject.numCapVertices = 4;
       _lineGameObject.numCornerVertices = 4;
+      _lineGameObject.tag = "Line";
+      _timeLeft = 2.0f;
+      // letterDoneAction.performed += _ => OnLetterFinished();
       Debug.Log("Drawing: Awake");
+      /*if (collectData is not null)
+      {
+        Debug.Log("collectData is not null");
+        collectData.FinishedLetter();
+      }*/
     }
-
+    
     private void Update()
     {
       if (!_currentLine) return;
+      _timeLeft -= Time.deltaTime;
+      if (_timeLeft <= 0) Debug.Log("time ended!");
       if (letterDone)
       {
-        Debug.Log("Calling Finished Letter (Drawing)");
-        if (collectData != null)
-        {
-          Debug.Log("Calling Finished Letter (Drawing)");
-          collectData.FinishedLetter();
-          letterDone = false;
-          /*Debug.Log("LETTER "+letter);
-          collectData.FinishedLetter(letter);
-          letterDone = false;
-          letter = ' ';*/
-          
-          
-          Debug.Log("letter done before gizmo");
-          if (gizmo != null)
-          {
-            Debug.Log("Gizmo set collect data");
-            gizmo.SetCollectData(collectData);  
-          }
-          Debug.Log("letter done before return");
-          /*if (collectData.GetLetterDone())
-          {
-            Destroy(_lineGameObject);
-            //Awake();
-          }*/
-          // collectData.SetLetterDone(false);
-          return;
-        }
+        OnLetterFinished();
       }
+      OnDrawing();
+    }
+    
+    private void OnLetterFinished()
+    {
+      Debug.Log("OnLetterFinished() called");
+      if (collectData != null)
+      {
+        collectData.FinishedLetter();
+        // if (gizmo != null) gizmo.SetCollectData(collectData);
+        _timeLeft = 2.0f;
+        var clones = GameObject.FindGameObjectsWithTag("Line");
+        foreach (var clone in clones)
+        {
+          if (clone.name.Contains("(Clone)"))
+          {
+            Destroy(clone);
+          }
+        }
+        letterDone = false;
+      }
+    }
 
+    private void OnDrawing()
+    {
       // Update current position
       var numPositions = _currentLine.positionCount;
       var position = transform.position;
@@ -109,10 +123,12 @@ namespace HandwritingVR
             collectData.UpdateLine(_currentLine);
           }
         }
-        
-        // When to call Destroy(_currentLine);
-        
       }
+    }
+
+    private void OnDoubleTrigger()
+    {
+      // TODO erase lines not recognize last drawing
     }
 
     private void OnDisable()
