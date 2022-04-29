@@ -15,7 +15,7 @@ namespace HandwritingVR
         public void SetCollectData(DrawingData data)
         {
             _collectData = data;
-            Debug.Log("DrawGizmo set collect data");
+            // Debug.Log("DrawGizmo set collect data");
         }
 
         private void OnDrawGizmos()
@@ -80,13 +80,26 @@ namespace HandwritingVR
 				
                 Gizmos.color = Color.cyan;
                 _proj2D = _collectData.Get2DSegments();
-                Debug.Log("OnDrawGizmos");
+                // Debug.Log("OnDrawGizmos");
                 if (_proj2D is null) return;
                 foreach (var segment in _proj2D)
                 {
                     for (int i = 0; i < segment.Count-1; i++)
                     {
                         Gizmos.DrawLine(segment[i],segment[i+1]);
+                    }
+                }
+                
+                Gizmos.color = Color.magenta;
+                _bound2D = _collectData.GetBoundBox2D();
+                if (_bound2D is null) return;
+                
+                for (int i = 0; i < _bound2D.Count-1; i++)
+                {
+                    Gizmos.DrawLine(_bound2D[i], _bound2D[i+1]);
+                    if (i == _bound2D.Count - 2)
+                    {
+                        Gizmos.DrawLine(_bound2D[i+1], _bound2D[0]);
                     }
                 }
             }
