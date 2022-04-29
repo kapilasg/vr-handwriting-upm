@@ -7,5 +7,8 @@
   "author": {
     "name": "Kapilas Gnanarajah",
     "email": "kapilas.gnanarajah@stud.unibas.ch"
+  },
+  "dependencies": {
+    "com.unity.inputsystem": "1.0.0"
   }
 }
