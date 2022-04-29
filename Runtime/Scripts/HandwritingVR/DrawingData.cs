@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Remoting.Messaging;
 using MathNet.Numerics.LinearAlgebra;
 using UnityEngine;
-using Plane = UnityEngine.Plane;
 using Vector3 = UnityEngine.Vector3;
 
 namespace HandwritingVR
@@ -14,6 +12,7 @@ namespace HandwritingVR
         private List<LineRenderer> _drawnLines;
         private List<List<Vector3>> _segments3D;
         private List<List<Vector2>> _segments2D;
+        private List<Vector2> _boundBox2D;
         
         private int _numberOfPoints;
         private Vector3 _supportVector;
@@ -30,6 +29,7 @@ namespace HandwritingVR
         // Adds LineRenderer Object to the List _drawnLines.
         public void AddLine(LineRenderer line)
         {
+            Debug.Log("Line added!!! with "+line.positionCount+" points");
             _drawnLines.Add(line);
             //Debug.Log("DrawingData: added Line");
         }
@@ -39,7 +39,10 @@ namespace HandwritingVR
         {
             //Debug.Log("DrawingData: updated Line");
             int n = _drawnLines.Count;
+            if (n <= 0) return;
             _drawnLines[n - 1] = line;
+            // 
+
             //Debug.Log("DrawingData: updated Line");
         }
 
@@ -57,47 +60,78 @@ namespace HandwritingVR
         public void FinishedLetter() // char c
         {
             SetPoints();
-            Debug.Log("DrawingData: Finished Letter");
-            Debug.Log("number of _segments in 3D "+ _segments3D.Count);
+            // Debug.Log("DrawingData: Finished Letter");
+            // Debug.Log("number of _segments in 3D "+ _segments3D.Count);
             _segments2D = ProjectSegments2D();
-            Debug.Log(_segments2D);
-            Debug.Log("Seg2D count: "+_segments2D.Count);
+            // Debug.Log(_segments2D);
+            // Debug.Log("Seg2D count: "+_segments2D.Count);
+            _boundBox2D = calcBoundBox2D();
             SegmentLines();
-
-            /*
-            Character letter = new Character('A', points2D.Count, segments);
-            string json = JsonUtility.ToJson(letter);
-            File.WriteAllText(Application.dataPath + "/fuzzyRules.json", json);
-            */
-
-            /*if (c != ' ')
+            
+            // string trainingsLetter = "j";
+            
+            //StoreDrawing(trainingsLetter);
+            //RecoverDrawing(trainingsLetter);
+            
+            List<Segment> segments = new List<Segment>();
+            for (int i = 0; i < _segments2D.Count; i++)
             {
-                List<List<Vector2>> points2D = GetNormalizedSegments();
-                List<Segment> segments = new List<Segment>();
-                for (int i = 0; i < points2D.Count; i++)
+                if (_boundBox2D.Count == 4)
                 {
-                    Segment s = new Segment(i, points2D[i], Get2DBoundingBox());
+                    Segment s = new Segment(i, _segments2D[i], _boundBox2D);
                     segments.Add(s);
                 }
-                Character letter = new Character((char)c, points2D.Count, segments);
+                else
+                {
+                    Debug.Log("_boundBox2D has "+ _boundBox2D.Count+" points");
+                }
             }
-            //RemoveAllLines();
-            letterDone = true;*/
+            
+            // Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
+            // TrainingsMode(letter);
+            var found = RecognizeCharacter(segments);
+            Debug.Log("Found the following character "+found.c+" with the accuracy: "+(found.accuracy*100)/_segments2D.Count+"%");
+            // Debug.Log("Trained on the following character "+trainingsLetter);
+            // RemoveAllLines();
+            ResetVariables();
         }
 
+        private void ResetVariables()
+        {
+            Debug.Log("ResetVariables() called");
+            Debug.Log("number of _drawLines: "+_drawnLines.Count);
+            RemoveAllLines();
+            Debug.Log("(After removeALl()), number of _drawLines: "+_drawnLines.Count);
+            Debug.Log("_segments3D.Count(): "+_segments3D.Count);
+            _segments3D = new List<List<Vector3>>();
+            Debug.Log("(Reset) _segments3D.Count(): "+_segments3D.Count);
+            Debug.Log("_segments2D.Count(): "+_segments2D.Count);
+            _segments2D = new List<List<Vector2>>();
+            Debug.Log("(Reset) _segments2D.Count(): "+_segments2D.Count);
+            Debug.Log("_boundBox2D.Count(): "+_boundBox2D.Count);
+            _boundBox2D = new List<Vector2>();
+            Debug.Log("(Reset) _boundBox2D.Count(): "+_boundBox2D.Count);
+            _numberOfPoints = 0;
+            _supportVector = new Vector3();
+            _directVector1 = new Vector3();
+            _directVector2 = new Vector3();
+            _normalVector = new Vector3();
+        }
         // call this method when the character is finished drawing
         private void SetPoints()
         {
             if (_segments3D == null)
             {
-                Debug.Log("_points is null");
+                Debug.Log("_segments3D is null");
                 return;
             }
 
+            Debug.Log("number of _drawLines: "+_drawnLines.Count);
             foreach (var line in _drawnLines)
             {
+                if (!line) continue;
                 int numberOfPoints = line.positionCount;
-                Debug.Log("number of points in line ->" + numberOfPoints);
+                // Debug.Log("number of points in line ->" + numberOfPoints);
                 if (numberOfPoints <= 2)
                 {
                     // temporary solution for end of letter problem
@@ -111,7 +145,7 @@ namespace HandwritingVR
                 }
                 else
                 {
-                    Debug.Log("number of points = " + numberOfPoints);
+                    // Debug.Log("number of points = " + numberOfPoints);
                     List<Vector3> segmentPoints = new List<Vector3>(numberOfPoints);
                     for (int i = 0; i < numberOfPoints; i++)
                     {
@@ -119,10 +153,9 @@ namespace HandwritingVR
                     }
 
                     _segments3D.Add(segmentPoints);
-
-                    Debug.Log("_segments3D.Count = " + _segments3D.Count);
-
                 }
+                // Debug.Log("_segments3D.Count = " + _segments3D.Count);
+
                 /*
                     _points.Add(line.GetPosition(0));
                     _points.Add(line.GetPosition(numberOfPoints / 2));
@@ -141,7 +174,8 @@ namespace HandwritingVR
             }
 
             _numberOfPoints = count;
-            Debug.Log("_numberOfPoints" + _numberOfPoints);
+            Debug.Log("_segments3D.Count = " + _segments3D.Count);
+            // Debug.Log("_numberOfPoints" + _numberOfPoints);
         }
         
         private List<List<Vector2>> ProjectSegments2D()
@@ -169,6 +203,7 @@ namespace HandwritingVR
             var lowLeft = Get2DFrom3D(boundBox3D[0]);
             var lowRight = Get2DFrom3D(boundBox3D[1]);
             var uppLeft = Get2DFrom3D(boundBox3D[3]);
+            
             var dx = Math.Abs(lowRight.x - lowLeft.x);
             var dy = Math.Abs(uppLeft.y - lowLeft.y);
             var d = dx / dy;
@@ -204,47 +239,62 @@ namespace HandwritingVR
         private void SegmentLines()
         {
             // _segments2D = new List<List<Vector2>>(); // segment in 2D;
-            Debug.Log("(Before) Number of 2D Segments: " + _segments2D.Count);
+            // Debug.Log("(Before) Number of 2D Segments: " + _segments2D.Count);
             var tmpProjSeg = new List<List<Vector2>>(_segments2D);
             _segments2D = new List<List<Vector2>>();
-            Debug.Log("tmpProjSeg size "+tmpProjSeg.Count);
-            List<Vector2> segment = new List<Vector2>();
+            // Debug.Log("tmpProjSeg size "+tmpProjSeg.Count);
             foreach (var line in tmpProjSeg)
             {
+                List<Vector2> segment;
                 if (line.Count < 8)
                 {
-                    Debug.Log("Segment has less than 8 Points and can therefore not further be divided");
+                    // Debug.Log("Segment has less than 8 Points and can therefore not further be divided");
                     segment = new List<Vector2>(line);
                     _segments2D.Add(segment);
                     continue;
                 }
+                // Finding first segment in line
                 var segmInd = FindFirstSegmentIndex(line);
-                Debug.Log("segmInd num of points: "+segmInd.numOfPoints);
-                Debug.Log("segmInd is last segment: "+segmInd.lastSegment);
+                // Debug.Log("number of points in first segment: "+segmInd.numOfPoints);
+                // Debug.Log("is it the last segment?: "+segmInd.lastSegment);
                 segment = new List<Vector2>(line.GetRange(0, segmInd.numOfPoints));
                 _segments2D.Add(segment);
+                
+                int bound = 0;
                 var restStartIndex = 0;
-                while (!segmInd.lastSegment)
+                while (!segmInd.lastSegment && bound < 5)
                 {
-                    Debug.Log("In segmenting while loop!");
-                    restStartIndex = segmInd.numOfPoints;
-                    var restSegment = new List<Vector2>(
+                    // Finding next segment in line
+                    // Debug.Log("In segmenting while loop!");
+                    // starts at end of last segment
+                    restStartIndex += segmInd.numOfPoints;
+                    // Debug.Log("restStartIndex: "+restStartIndex);
+                    // define rest of line as new line without the first segment
+                    var restLine = new List<Vector2>(
                         line.GetRange(restStartIndex, line.Count-restStartIndex));
-                    segmInd = FindFirstSegmentIndex(restSegment);
+                    // Debug.Log("number of points in restLine: " + restLine.Count);
+                    segmInd = FindFirstSegmentIndex(restLine);
+                    // Debug.Log("number of points in first segment in restLine: "+segmInd.numOfPoints);
                     var nextSegment = new List<Vector2>(line.GetRange(restStartIndex, segmInd.numOfPoints));
                     _segments2D.Add(nextSegment);
+                    bound++;
+                }
+
+                if (bound >= 5)
+                {
+                    Debug.Log("bound exceeded");
                 }
             }
 
-            Debug.Log("(After) Number of 2D Segments: " + _segments2D.Count);
+            Debug.Log("Number of 2D Segments: " + _segments2D.Count);
         }
 
         private (int numOfPoints,bool lastSegment) FindFirstSegmentIndex(List<Vector2> line)
         {
-            Debug.Log("(FindFirstSegment) number of points in line: "+ line.Count);
+            // Debug.Log("(FindFirstSegment) number of points in line: "+ line.Count);
             if (line.Count < 8)
             {
-                Debug.Log("Too short to segment"+ line.Count);
+                // Debug.Log("Too short to segment"+ line.Count);
                 return (line.Count, true);
             }
             
@@ -258,7 +308,6 @@ namespace HandwritingVR
                 // calcAvrAngle += Vector2.Angle(Vector2.right, line[i+1] - line[i]);
                 calcAvrAngle += Vector2.Angle(line[i+2] - line[i], line[i-2] - line[i]);
                 counter++;
-
             }
             calcAvrAngle /= counter;
             for (int i = 0; i < line.Count - 1; i++)
@@ -267,15 +316,15 @@ namespace HandwritingVR
             }
             //Debug.Log("avrAngle: "+ avrAngle);
             //Debug.Log("calcAvrAngle: "+ calcAvrAngle);
-            Debug.Log("avrLength: "+ Vector2.Distance(line[0], line[^1]));
-            Debug.Log("calcLength: "+ calcLength);
-            Debug.Log("AvrAngle: " + calcAvrAngle);
+            //Debug.Log("avrLength: "+ Vector2.Distance(line[0], line[^1]));
+            //Debug.Log("calcLength: "+ calcLength);
+            //Debug.Log("AvrAngle: " + calcAvrAngle);
             // Debug.Log("avrAngle - calcAvrAngle: " + Math.Abs(avrAngle - calcAvrAngle));
             // Math.Abs(avrAngle - calcAvrAngle) < 25 
             if (165 <= calcAvrAngle && calcAvrAngle <= 195 
                 && Math.Abs(Vector2.Distance(line[0], line[^1]) - calcLength) < 0.15)
             {
-                Debug.Log("Just a straight line.");
+                // Debug.Log("Just a straight line.");
                 return (line.Count, true);
             }
 
@@ -286,12 +335,14 @@ namespace HandwritingVR
                 var right = line[i + 2] - line[i];
                 var left = line[i - 2] - line[i];
                 var angle = Vector2.Angle(right, left);
-                Debug.Log("Angle "+i+" in between: "+ angle); // Is weighting necessary?
+                //Debug.Log("Angle "+i+" in between: "+ angle); // Is weighting necessary?
                 if (angle < 120) // consider < 130 for small drawings!!!
                 {
-                    Debug.Log("Interesting?");
+                    //Debug.Log("Interesting?");
                     // Look at the next few points to see if they have a smaller angle !!!
                     // TODO check next three angles if there are three angles left
+                    
+                    // TODO Check also that you don't segment something with less than four point!!!
                     if (i + 4 < line.Count)
                     {
                         var nextAngle = Vector2.Angle(line[i + 3] - line[i+1], line[i - 1] - line[i+1]);
@@ -373,7 +424,7 @@ namespace HandwritingVR
 
                     }
                     var points = line.Count - i;
-                    if (points < 4)
+                    if (points <= 4) // TODO bug probably in this if...
                     {
                         return (line.Count, true);
                     }
@@ -381,19 +432,8 @@ namespace HandwritingVR
                     {
                         return (i + 1, false);
                     }
-                    // TODO check how many points are left
-                    //  if less than x than add them to current segment
-                    //  else just return the short segment
                 }
             }
-            
-            
-            /*Debug.Log("(FindFirstSegment) number of points in line: "+ line.Count);
-            Debug.Log("(FindFirstSegment) number of angles: "+ angles.Count);
-            for (int i = 0; i < angles.Count; i++)
-            {
-                Debug.Log("angle "+i+": " + angles[i]);
-            }*/
             
             return (line.Count, true);
 
@@ -724,6 +764,130 @@ namespace HandwritingVR
         public List<List<Vector2>> Get2DSegments()
         {
             return _segments2D ?? null;
+        }
+
+        private List<Vector2> calcBoundBox2D()
+        {
+            float minX = _segments2D[0][0].x;
+            float maxX = _segments2D[0][0].x;
+            float minY = _segments2D[0][0].y;
+            float maxY = _segments2D[0][0].y;
+
+            for (int i = 0; i < _segments2D.Count; i++)
+            {
+                for (int j = 0; j < _segments2D[i].Count; j++)
+                {
+                    var vi = _segments2D[i][j].x;
+                    var vj = _segments2D[i][j].y;
+
+                    if (vi < minX)
+                    {
+                        minX = vi;
+                    }
+
+                    if (vi > maxX)
+                    {
+                        maxX = vi;
+                    }
+
+                    if (vj < minY)
+                    {
+                        minY = vj;
+                    }
+
+                    if (vj > maxY)
+                    {
+                        maxY = vj;
+                    }
+                }
+            }
+
+            var boundingBox = new List<Vector2>
+            {
+                // upper left corner
+                new (minX, minY),
+                new (maxX, minY),
+                new (maxX, maxY),
+                new (minX, maxY)
+            };
+            return boundingBox;
+        }
+        public List<Vector2> GetBoundBox2D()
+        {
+            return _boundBox2D;
+        }
+
+        private void WriteToJson(Character c)
+        {
+            SearchCharacter sc = ReadFromJson(c.numberOfSegments);
+            sc.TrainingsMode(c);
+            string writeJson = JsonUtility.ToJson(sc);
+            File.WriteAllText(Application.dataPath + "/trainingBase"+c.numberOfSegments+".json", writeJson);
+            Debug.Log("End of WriteToJson");
+        }
+
+        private SearchCharacter ReadFromJson(int fileIndex)
+        {
+            SearchCharacter sc;
+            if (File.Exists(Application.dataPath + "/trainingBase" + fileIndex + ".json"))
+            {
+                string readJson = File.ReadAllText(Application.dataPath + "/trainingBase"+fileIndex+".json");
+                sc = JsonUtility.FromJson<SearchCharacter>(readJson);
+            }
+            else
+            {
+                Debug.Log("File doesn't exist");
+                sc = new SearchCharacter();
+            }
+            return sc;
+        }
+
+        private (char c, float accuracy) RecognizeCharacter(List<Segment> segments)
+        {
+            int n = segments.Count;
+            SearchCharacter sc = ReadFromJson(n);
+            var result = sc.RecognitionMode(segments);
+            if (result.c == ' ')
+            {
+                Debug.Log("Character Not Found!!");
+            }
+
+            return (result.c, result.accuracy);
+        }
+
+        private void TrainingsMode(Character c)
+        {
+            WriteToJson(c);
+        }
+
+        private void StoreDrawing(string fileName)
+        {
+            SegmentPoints sp = new SegmentPoints(_segments2D, _boundBox2D);
+            string json = JsonUtility.ToJson(sp);
+            File.WriteAllText(Application.dataPath + "/storedDrawing_"+fileName+".json", json);
+            if (File.Exists(Application.dataPath + "/storedDrawing_" + fileName + ".json"))
+            {
+                Debug.Log("File created!!");
+            }
+            else
+            {
+                Debug.Log("File not created!!");
+            }
+        }
+
+        private void RecoverDrawing(string fileName)
+        {
+            if (File.Exists(Application.dataPath + "/storedDrawing_"+fileName+".json"))
+            {
+                string readJson = File.ReadAllText(Application.dataPath + "/storedDrawing_"+fileName+".json");
+                SegmentPoints sp = JsonUtility.FromJson<SegmentPoints>(readJson);
+                _segments2D = sp.GetPoints();
+                _boundBox2D = sp.boundBox;
+            }
+            else
+            {
+                Debug.Log("storedDrawing: FileNotFound");
+            }
         }
 
     }
