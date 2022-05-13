@@ -892,5 +892,39 @@ namespace HandwritingVR
             }
         }
 
+        public char GetCharacter()
+        {
+            return _foundCharacter;
+        }
+
+        public void SetModifiedWord(char c)
+        {
+            if (c == '-')
+            {
+                _word.Remove(_word.Length - 1, 1);
+            }
+            else
+            {
+                _word.Append(c);
+            }
+            
+        }
+
+        public string GetWord()
+        {
+            return _word.ToString();
+        }
+        
+        public void SpaceOnClick()
+        {
+            Debug.Log("Space Button clicked!");
+            SetModifiedWord(' ');
+        }
+        
+        public void BackspaceOnClick()
+        {
+            Debug.Log("Backspace Button clicked! ");
+            SetModifiedWord('-');
+        }
     }
 }
