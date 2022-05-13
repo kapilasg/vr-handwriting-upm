@@ -1,29 +1,31 @@
-using System.Collections.Generic;
-using System.Security.Cryptography;
+using System;
 using UnityEngine;
-// using UnityEngine.InputSystem;
+using UnityEngine.Events;
 
 namespace HandwritingVR
 {
   public class Drawing : MonoBehaviour
   {
-  public Material lineMaterial;
-    // public char letter;
+    [Serializable]
+    public class TextInputEvent : UnityEvent<string>
+    {
+    }
+   
+    public Material lineMaterial;
     public float lineWidth = 0.01f;
     public float maxSegmentDistance = 0.02f;
     public float minCornerAngle = 10;
     public DrawingData collectData;
     public DrawGizmo gizmo;
-    public bool letterDone;
-    //public InputAction letterDoneAction;
+    public string word;
+    public TextInputEvent onLetterDrawn;
     
-    private float _timeLeft;
     private LineRenderer _currentLine;
     private LineRenderer _lineGameObject;
     private float _sqrMaxSegmentDistance;
-    // private List<LineRenderer> _lines;
-    // private List<GameObject> _lineObjects;
-
+    private float _startTimer;
+    private bool _foundDoubleTrigger;
+    
     private void Awake()
     {
       _sqrMaxSegmentDistance = maxSegmentDistance * maxSegmentDistance;
@@ -35,36 +37,29 @@ namespace HandwritingVR
       _lineGameObject.numCapVertices = 4;
       _lineGameObject.numCornerVertices = 4;
       _lineGameObject.tag = "Line";
-      _timeLeft = 2.0f;
-      // letterDoneAction.performed += _ => OnLetterFinished();
+      _foundDoubleTrigger = false;
       Debug.Log("Drawing: Awake");
-      /*if (collectData is not null)
-      {
-        Debug.Log("collectData is not null");
-        collectData.FinishedLetter();
-      }*/
     }
     
     private void Update()
     {
       if (!_currentLine) return;
-      _timeLeft -= Time.deltaTime;
-      if (_timeLeft <= 0) Debug.Log("time ended!");
-      if (letterDone)
+      if (DoubleTriggerDetected())
       {
         OnLetterFinished();
       }
       OnDrawing();
     }
-    
+
     private void OnLetterFinished()
     {
-      Debug.Log("OnLetterFinished() called");
       if (collectData != null)
       {
-        collectData.FinishedLetter();
+        char c = collectData.FinishedLetter();
+        word = collectData.GetWord();
+        Debug.Log("Word: "+word);
+        Action onFinishedDrawing = () => onLetterDrawn.Invoke(word);
         // if (gizmo != null) gizmo.SetCollectData(collectData);
-        _timeLeft = 2.0f;
         var clones = GameObject.FindGameObjectsWithTag("Line");
         foreach (var clone in clones)
         {
@@ -73,7 +68,6 @@ namespace HandwritingVR
             Destroy(clone);
           }
         }
-        letterDone = false;
       }
     }
 
@@ -125,10 +119,12 @@ namespace HandwritingVR
         }
       }
     }
-
-    private void OnDoubleTrigger()
+    
+    private bool DoubleTriggerDetected()
     {
-      // TODO erase lines not recognize last drawing
+      if (!_foundDoubleTrigger) return false;
+      _foundDoubleTrigger = false;
+      return true;
     }
 
     private void OnDisable()
@@ -141,7 +137,17 @@ namespace HandwritingVR
     {
       if (start)
       {
+        if (_startTimer != 0)
+        {
+          float timeDiff = Time.time - _startTimer;
+          if (timeDiff < 0.2f)
+          {
+            _foundDoubleTrigger = true;
+          }
+        }
         _currentLine = Instantiate(_lineGameObject);
+        _startTimer = Time.time;
+        
         var position = transform.position;
         _currentLine.SetPosition(0, position);
         _currentLine.SetPosition(1, position);
@@ -153,7 +159,6 @@ namespace HandwritingVR
         {
           collectData.AddLine(_currentLine);
         }
-
       }
       else
       {
