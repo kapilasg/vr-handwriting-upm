@@ -107,19 +107,19 @@ namespace HandwritingVR
 
         private void ResetVariables()
         {
-            Debug.Log("ResetVariables() called");
-            Debug.Log("number of _drawLines: "+_drawnLines.Count);
+            // Debug.Log("ResetVariables() called");
+            // Debug.Log("number of _drawLines: "+_drawnLines.Count);
             RemoveAllLines();
-            Debug.Log("(After removeALl()), number of _drawLines: "+_drawnLines.Count);
-            Debug.Log("_segments3D.Count(): "+_segments3D.Count);
+            // Debug.Log("(After removeALl()), number of _drawLines: "+_drawnLines.Count);
+            // Debug.Log("_segments3D.Count(): "+_segments3D.Count);
             _segments3D = new List<List<Vector3>>();
-            Debug.Log("(Reset) _segments3D.Count(): "+_segments3D.Count);
-            Debug.Log("_segments2D.Count(): "+_segments2D.Count);
+            // Debug.Log("(Reset) _segments3D.Count(): "+_segments3D.Count);
+            // Debug.Log("_segments2D.Count(): "+_segments2D.Count);
             _segments2D = new List<List<Vector2>>();
-            Debug.Log("(Reset) _segments2D.Count(): "+_segments2D.Count);
-            Debug.Log("_boundBox2D.Count(): "+_boundBox2D.Count);
+            // Debug.Log("(Reset) _segments2D.Count(): "+_segments2D.Count);
+            // Debug.Log("_boundBox2D.Count(): "+_boundBox2D.Count);
             _boundBox2D = new List<Vector2>();
-            Debug.Log("(Reset) _boundBox2D.Count(): "+_boundBox2D.Count);
+            // Debug.Log("(Reset) _boundBox2D.Count(): "+_boundBox2D.Count);
             _numberOfPoints = 0;
             _supportVector = new Vector3();
             _directVector1 = new Vector3();
@@ -135,8 +135,9 @@ namespace HandwritingVR
                 return;
             }
 
-            Debug.Log("number of _drawLines: "+_drawnLines.Count);
-            foreach (var line in _drawnLines)
+            // Debug.Log("number of _drawLines: "+_drawnLines.Count);
+            // Debug.Log("number of relevant _drawLines: "+ (_drawnLines.Count - 2));
+            for (int i = 0; i < _drawnLines.Count-2; i++)
             {
                 if (!line) continue;
                 int numberOfPoints = line.positionCount;
@@ -160,16 +161,8 @@ namespace HandwritingVR
                     {
                         segmentPoints.Add(line.GetPosition(i));
                     }
-
                     _segments3D.Add(segmentPoints);
                 }
-                // Debug.Log("_segments3D.Count = " + _segments3D.Count);
-
-                /*
-                    _points.Add(line.GetPosition(0));
-                    _points.Add(line.GetPosition(numberOfPoints / 2));
-                    _points.Add(line.GetPosition(numberOfPoints - 1));
-                    */
             }
 
             int count = 0;
@@ -665,7 +658,8 @@ namespace HandwritingVR
             // make a matrix out of all points which is a vector list
             var A = Matrix<float>.Build;
             float[,] vectorArray = new float[_numberOfPoints, 3];
-            //Debug.Log("numberOfPoints = " + _numberOfPoints);
+            Debug.Log("(CalcDecomp) numberOfPoints = " + _numberOfPoints);
+            Debug.Log("(CalcDecomp) _segment3D.Count = " + _segments3D.Count);
             int count = 0;
             for (int i = 0; i < _segments3D.Count; i++)
             {
