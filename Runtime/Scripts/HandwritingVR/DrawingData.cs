@@ -46,13 +46,12 @@ namespace HandwritingVR
             int n = _drawnLines.Count;
             if (n <= 0) return;
             _drawnLines[n - 1] = line;
-            // 
 
             //Debug.Log("DrawingData: updated Line");
         }
 
         // Removes all lines in _drawnLines.
-        public void RemoveAllLines()
+        private void RemoveAllLines()
         {
             int n = _drawnLines.Count;
             _drawnLines.RemoveRange(0, n);
@@ -62,7 +61,7 @@ namespace HandwritingVR
             }
         }
 
-        public char FinishedLetter() // char c
+        public char FinishedLetter()
         {
             SetPoints();
             // Debug.Log("DrawingData: Finished Letter");
@@ -107,28 +106,20 @@ namespace HandwritingVR
 
         private void ResetVariables()
         {
-            // Debug.Log("ResetVariables() called");
-            // Debug.Log("number of _drawLines: "+_drawnLines.Count);
             RemoveAllLines();
-            // Debug.Log("(After removeALl()), number of _drawLines: "+_drawnLines.Count);
-            // Debug.Log("_segments3D.Count(): "+_segments3D.Count);
             _segments3D = new List<List<Vector3>>();
-            // Debug.Log("(Reset) _segments3D.Count(): "+_segments3D.Count);
-            // Debug.Log("_segments2D.Count(): "+_segments2D.Count);
             _segments2D = new List<List<Vector2>>();
-            // Debug.Log("(Reset) _segments2D.Count(): "+_segments2D.Count);
-            // Debug.Log("_boundBox2D.Count(): "+_boundBox2D.Count);
             _boundBox2D = new List<Vector2>();
-            // Debug.Log("(Reset) _boundBox2D.Count(): "+_boundBox2D.Count);
             _numberOfPoints = 0;
             _supportVector = new Vector3();
             _directVector1 = new Vector3();
             _directVector2 = new Vector3();
             _normalVector = new Vector3();
         }
-        // call this method when the character is finished drawing
+        
         private void SetPoints()
         {
+            // call this method when the character is finished drawing
             if (_segments3D == null)
             {
                 Debug.Log("_segments3D is null");
@@ -315,13 +306,6 @@ namespace HandwritingVR
             {
                 calcLength += Vector2.Distance(line[i], line[i + 1]);
             }
-            //Debug.Log("avrAngle: "+ avrAngle);
-            //Debug.Log("calcAvrAngle: "+ calcAvrAngle);
-            //Debug.Log("avrLength: "+ Vector2.Distance(line[0], line[^1]));
-            //Debug.Log("calcLength: "+ calcLength);
-            //Debug.Log("AvrAngle: " + calcAvrAngle);
-            // Debug.Log("avrAngle - calcAvrAngle: " + Math.Abs(avrAngle - calcAvrAngle));
-            // Math.Abs(avrAngle - calcAvrAngle) < 25 
             if (165 <= calcAvrAngle && calcAvrAngle <= 195 
                 && Math.Abs(Vector2.Distance(line[0], line[^1]) - calcLength) < 0.15)
             {
@@ -339,11 +323,6 @@ namespace HandwritingVR
                 //Debug.Log("Angle "+i+" in between: "+ angle); // Is weighting necessary?
                 if (angle < 120) // consider < 130 for small drawings!!!
                 {
-                    //Debug.Log("Interesting?");
-                    // Look at the next few points to see if they have a smaller angle !!!
-                    // TODO check next three angles if there are three angles left
-                    
-                    // TODO Check also that you don't segment something with less than four point!!!
                     if (i + 4 < line.Count)
                     {
                         var nextAngle = Vector2.Angle(line[i + 3] - line[i+1], line[i - 1] - line[i+1]);
@@ -358,10 +337,7 @@ namespace HandwritingVR
                             {
                                 return (line.Count, true);
                             }
-                            else
-                            {
-                                return (i + 1, false);
-                            }
+                            return (i + 1, false);
                         }
 
                         if (nextAngle < angle && nextAngle < nextAngle2)
@@ -372,10 +348,7 @@ namespace HandwritingVR
                             {
                                 return (line.Count, true);
                             }
-                            else
-                            {
-                                return (i + 2, false);
-                            }
+                            return (i + 2, false);
                         }
 
                         if (nextAngle2 < angle && nextAngle2 < nextAngle)
@@ -386,10 +359,7 @@ namespace HandwritingVR
                             {
                                 return (line.Count, true);
                             }
-                            else
-                            {
-                                return (i + 3, false);
-                            }
+                            return (i + 3, false);
                         }
                     }
 
@@ -405,10 +375,7 @@ namespace HandwritingVR
                             {
                                 return (line.Count, true);
                             }
-                            else
-                            {
-                                return (i + 1, false);
-                            }
+                            return (i + 1, false);
                         }
                         else
                         {
@@ -417,10 +384,7 @@ namespace HandwritingVR
                             {
                                 return (line.Count, true);
                             }
-                            else
-                            {
-                                return (i + 2, false);
-                            }
+                            return (i + 2, false);
                         }
 
                     }
@@ -429,77 +393,10 @@ namespace HandwritingVR
                     {
                         return (line.Count, true);
                     }
-                    else
-                    {
-                        return (i + 1, false);
-                    }
+                    return (i + 1, false);
                 }
             }
-            
             return (line.Count, true);
-
-
-            /*/Debug.Log("Length of line to segment: "+ line.Count);
-            var index = 0;
-            var a1 = Vector2.Angle(Vector2.right, line[1] - line[0]);
-            var a2 = Vector2.Angle(Vector2.right, line[3] - line[2]);
-            var threshold = 40;
-            // Found Straight Line beginning Segment
-            if (a1 - a2 < threshold)
-            {
-                Debug.Log("Found straight line at the beginning");
-                // check rest of segment if it only consist of same angle
-                while (a1 - a2 < threshold && index + 4 < line.Count)
-                {
-                    a1 = Vector2.Angle(Vector2.right, line[index + 1] - line[index]);
-                    a2 = Vector2.Angle(Vector2.right, line[index + 3] - line[index + 2]);
-                    index++;
-                    Debug.Log("index (straight): "+ index);
-                }
-                Debug.Log("index (straight) at end: "+ index);
-                Debug.Log("index (straight) if cond.: "+ (line.Count - index + 1));
-                if (line.Count - index + 1 <= 4)
-                {
-                    Debug.Log("BUT the last points are not for own segment");
-                    Debug.Log("Therefore last segment of straight line was found");
-                    Debug.Log("index (straight after found): "+ index);
-                    return (line.Count - 1, true);
-                }
-                else
-                {
-                    Debug.Log("Found end of straight line but not end of segment index: "+ (index+1));
-                    Debug.Log("index (straight after found2): "+ index);
-                    return (index + 1, false);
-                }
-            }
-            else
-            {
-                // Arc was found at the beginning
-                Debug.Log("Found Arc at the beginning");
-                while (a1 - a2 > threshold && a1 - a2 < 60 && index + 4 < line.Count)
-                {
-                    // search for end of arc
-                    a1 = Vector2.Angle(Vector2.right, line[index + 1] - line[index]);
-                    a2 = Vector2.Angle(Vector2.right, line[index + 3] - line[index + 2]);
-                    index++;
-                    Debug.Log("index (arc): "+ index);
-                }
-                
-                if (line.Count - index + 1 <= 4)
-                {
-                    Debug.Log("BUT the last points are not for own segment");
-                    Debug.Log("Therefore last segment of Arc was found");
-                    Debug.Log("index (arc after found): "+ index);
-                    return (line.Count - 1, true);
-                }
-                else
-                {
-                    Debug.Log("Found end of Arc but not end of segment");
-                    Debug.Log("index (straight after found2): "+ index);
-                    return (index + 1, false);
-                }
-            }
-            */
         }
         
         private void FindPlane()
@@ -675,8 +572,8 @@ namespace HandwritingVR
 
             var a = A.DenseOfArray(vectorArray);
             var decomp = a.Svd(true);
-            var v = decomp.VT
-                .Transpose(); // returns 3x3 matrix where the first 2 colums are "Richtungvektoren" and the 3. is normal vector to plane.
+            var v = decomp.VT.Transpose(); 
+            // returns 3x3 matrix where the first 2 colums are "Richtungvektoren" and the 3. is normal vector to plane.
             //Debug.Log("calc 3x3 matrix v = " + v.ToString());
             return v;
         }
@@ -744,14 +641,7 @@ namespace HandwritingVR
                 // upper right corner
                 _directVector1 * minX + _directVector2 * maxY
             };
-
-            /*
-            Debug.Log("Bounding Box "+ _boundingBox[0]);
-            Debug.Log("Bounding Box "+ _boundingBox[1]);
-            Debug.Log("Bounding Box "+ _boundingBox[2]);
-            Debug.Log("Bounding Box "+ _boundingBox[3]);
-            */
-
+            
             return boundingBox;
         }
 
@@ -814,6 +704,7 @@ namespace HandwritingVR
             };
             return boundingBox;
         }
+        
         public List<Vector2> GetBoundBox2D()
         {
             return _boundBox2D;
