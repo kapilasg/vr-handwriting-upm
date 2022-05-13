@@ -139,13 +139,13 @@ namespace HandwritingVR
             // Debug.Log("number of relevant _drawLines: "+ (_drawnLines.Count - 2));
             for (int i = 0; i < _drawnLines.Count-2; i++)
             {
-                if (!line) continue;
-                int numberOfPoints = line.positionCount;
+                if (!_drawnLines[i]) continue;
+                int numberOfPoints = _drawnLines[i].positionCount;
                 // Debug.Log("number of points in line ->" + numberOfPoints);
-                if (numberOfPoints <= 2)
+                if (numberOfPoints <= 3)
                 {
                     // temporary solution for end of letter problem
-                    Debug.Log("number of points <= 2 ->" + numberOfPoints);
+                    Debug.Log("number of points <= 3 ->" + numberOfPoints);
                     /*Vector3[] tmp = new Vector3[numberOfPoints];
                     line.GetPositions(tmp);
                     foreach (var t in tmp)
@@ -157,9 +157,9 @@ namespace HandwritingVR
                 {
                     // Debug.Log("number of points = " + numberOfPoints);
                     List<Vector3> segmentPoints = new List<Vector3>(numberOfPoints);
-                    for (int i = 0; i < numberOfPoints; i++)
+                    for (int j = 0; j < numberOfPoints; j++)
                     {
-                        segmentPoints.Add(line.GetPosition(i));
+                        segmentPoints.Add(_drawnLines[i].GetPosition(j));
                     }
                     _segments3D.Add(segmentPoints);
                 }
