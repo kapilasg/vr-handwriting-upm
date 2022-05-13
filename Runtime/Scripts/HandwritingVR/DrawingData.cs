@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using MathNet.Numerics.LinearAlgebra;
 using UnityEngine;
 using Vector3 = UnityEngine.Vector3;
@@ -19,17 +20,21 @@ namespace HandwritingVR
         private Vector3 _normalVector;
         private Vector3 _directVector1;
         private Vector3 _directVector2;
+
+        private char _foundCharacter = ' ';
+        private StringBuilder _word;
         
         public DrawingData()
         {
             _drawnLines = new List<LineRenderer>();
             _segments3D = new List<List<Vector3>>();
+            _word = new StringBuilder();
         }
 
         // Adds LineRenderer Object to the List _drawnLines.
         public void AddLine(LineRenderer line)
         {
-            Debug.Log("Line added!!! with "+line.positionCount+" points");
+            // Debug.Log("Line added!!! with "+line.positionCount+" points");
             _drawnLines.Add(line);
             //Debug.Log("DrawingData: added Line");
         }
@@ -57,7 +62,7 @@ namespace HandwritingVR
             }
         }
 
-        public void FinishedLetter() // char c
+        public char FinishedLetter() // char c
         {
             SetPoints();
             // Debug.Log("DrawingData: Finished Letter");
@@ -67,12 +72,7 @@ namespace HandwritingVR
             // Debug.Log("Seg2D count: "+_segments2D.Count);
             _boundBox2D = calcBoundBox2D();
             SegmentLines();
-            
-            // string trainingsLetter = "j";
-            
-            //StoreDrawing(trainingsLetter);
-            //RecoverDrawing(trainingsLetter);
-            
+
             List<Segment> segments = new List<Segment>();
             for (int i = 0; i < _segments2D.Count; i++)
             {
@@ -87,13 +87,22 @@ namespace HandwritingVR
                 }
             }
             
+            // string trainingsLetter = "h";
+            // StoreDrawing(trainingsLetter);
+            // RecoverDrawing(trainingsLetter);
             // Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
             // TrainingsMode(letter);
             var found = RecognizeCharacter(segments);
+            _foundCharacter = found.c;
+            if (_foundCharacter != ' ')
+            {
+                _word.Append(_foundCharacter.ToString().ToLower());
+            }
+            
             Debug.Log("Found the following character "+found.c+" with the accuracy: "+(found.accuracy*100)/_segments2D.Count+"%");
-            // Debug.Log("Trained on the following character "+trainingsLetter);
-            // RemoveAllLines();
+            
             ResetVariables();
+            return found.c;
         }
 
         private void ResetVariables()
@@ -174,8 +183,7 @@ namespace HandwritingVR
             }
 
             _numberOfPoints = count;
-            Debug.Log("_segments3D.Count = " + _segments3D.Count);
-            // Debug.Log("_numberOfPoints" + _numberOfPoints);
+            // Debug.Log("_segments3D.Count = " + _segments3D.Count);
         }
         
         private List<List<Vector2>> ProjectSegments2D()
@@ -286,7 +294,7 @@ namespace HandwritingVR
                 }
             }
 
-            Debug.Log("Number of 2D Segments: " + _segments2D.Count);
+            // Debug.Log("Number of 2D Segments: " + _segments2D.Count);
         }
 
         private (int numOfPoints,bool lastSegment) FindFirstSegmentIndex(List<Vector2> line)
@@ -836,7 +844,7 @@ namespace HandwritingVR
             }
             else
             {
-                Debug.Log("File doesn't exist");
+                Debug.Log("File with index "+fileIndex+" doesn't exist");
                 sc = new SearchCharacter();
             }
             return sc;
