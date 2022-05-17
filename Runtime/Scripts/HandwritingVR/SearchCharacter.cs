@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -24,8 +25,6 @@ namespace HandwritingVR
             if (characterList is null)
             {
                 characterList = new List<Character>();
-                // TODO Insert all possible segment sequences Reihenfolgen
-                // n! Moöglichkeiten
                 characterList.Add(c);
             }
             else
@@ -45,26 +44,66 @@ namespace HandwritingVR
 
         }*/
 
-        public (char c, float accuracy) RecognitionMode(List<Segment> segments)
+        public (char c, float accuracy, List<char> bestMatches) RecognitionMode(List<Segment> segments)
         {
             if (characterList.Count == 0)
             {
-                return (' ', 0f);
+                return (' ', 0f, new List<char>());
             }
             char bestChar = ' ';
             int bestValue = 0;
+            List<char> bestMatches = new List<char>();
             for (int i = 0; i < characterList.Count; i++)
             {
-                int v = characterList[i].CompareCharacters(segments);
-                if (bestValue < v)
+                int currentValue = characterList[i].CompareCharacters(segments);
+                if (bestValue <= currentValue)
                 {
-                    bestValue = v;
+                    // only small alphabet considered
+                    // skip numbers in trainingsbase
+                    if (characterList[i].letter >= 48 && characterList[i].letter <= 57)
+                    { 
+                        Debug.Log("best char: "+bestChar);
+                        break;
+                    }
+                    bestValue = currentValue;
                     bestChar = characterList[i].letter;
+                    if (Char.IsUpper(bestChar))
+                    {
+                        bestChar = Char.ToLower(bestChar);
+                    }
+                    if(DuplicateExists(bestChar, bestMatches))
+                    {
+                        bestMatches.Remove(bestChar); // For best char at end of list
+                        bestMatches.Add(bestChar);
+                    }
+                    else
+                    {
+                        bestMatches.Add(bestChar);
+                    }
+                    
+                    if (bestMatches.Count > 5)
+                    {
+                        bestMatches.RemoveRange(0, 1); // remove first element if list is full
+                    }
                 }
             }
-            // bestValue 
+            bestMatches.Reverse();
+            Debug.Log("Length of Best matches: "+ bestMatches.Count);
             float accuracy = bestValue / 19f;
-            return (bestChar, accuracy);
+            return (bestChar, accuracy, bestMatches);
+        }
+
+        private bool DuplicateExists(char c, List<char> list)
+        {
+            for (int i = 0; i < list.Count; i++)
+            {
+                if (list[i] == c)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

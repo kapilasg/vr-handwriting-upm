@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using MathNet.Numerics.LinearAlgebra;
 using UnityEngine;
+using UnityEngine.UI;
 using Vector3 = UnityEngine.Vector3;
 
 namespace HandwritingVR
@@ -22,6 +23,7 @@ namespace HandwritingVR
         private Vector3 _directVector2;
 
         private char _foundCharacter = ' ';
+        private List<char> _bestResults = new List<char>();
         private StringBuilder _word;
         
         public DrawingData()
@@ -64,11 +66,18 @@ namespace HandwritingVR
         public char FinishedLetter()
         {
             SetPoints();
-            // Debug.Log("DrawingData: Finished Letter");
-            // Debug.Log("number of _segments in 3D "+ _segments3D.Count);
+            if (_numberOfPoints == 0)
+            {
+                return ' ';
+            }
+            if (_numberOfPoints > 0 && _numberOfPoints <= 3)
+            {
+                // _word.Append('.');
+                return '.'; 
+            }
+            
             _segments2D = ProjectSegments2D();
-            // Debug.Log(_segments2D);
-            // Debug.Log("Seg2D count: "+_segments2D.Count);
+            
             _boundBox2D = calcBoundBox2D();
             SegmentLines();
 
@@ -86,19 +95,22 @@ namespace HandwritingVR
                 }
             }
             
-            // string trainingsLetter = "h";
+            string trainingsLetter = "y"; // i, j dot preferably as point but circle should work too
             // StoreDrawing(trainingsLetter);
             // RecoverDrawing(trainingsLetter);
-            // Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
-            // TrainingsMode(letter);
+            Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
+            TrainingsMode(letter);
+            
             var found = RecognizeCharacter(segments);
             _foundCharacter = found.c;
+            _bestResults = found.bestMatches;
             if (_foundCharacter != ' ')
             {
                 _word.Append(_foundCharacter.ToString().ToLower());
             }
             
-            Debug.Log("Found the following character "+found.c+" with the accuracy: "+(found.accuracy*100)/_segments2D.Count+"%");
+            Debug.Log("Found the following character " + found.c + " with the accuracy: " +
+                      (found.accuracy * 100) / _segments2D.Count + "%");
             
             ResetVariables();
             return found.c;
@@ -133,26 +145,15 @@ namespace HandwritingVR
                 if (!_drawnLines[i]) continue;
                 int numberOfPoints = _drawnLines[i].positionCount;
                 // Debug.Log("number of points in line ->" + numberOfPoints);
+                List<Vector3> segmentPoints = new List<Vector3>(numberOfPoints);
+                for (int j = 0; j < numberOfPoints; j++)
+                {
+                    segmentPoints.Add(_drawnLines[i].GetPosition(j));
+                }
+                _segments3D.Add(segmentPoints);
                 if (numberOfPoints <= 3)
                 {
-                    // temporary solution for end of letter problem
                     Debug.Log("number of points <= 3 ->" + numberOfPoints);
-                    /*Vector3[] tmp = new Vector3[numberOfPoints];
-                    line.GetPositions(tmp);
-                    foreach (var t in tmp)
-                    {
-                        _points.Add(t);
-                    }*/
-                }
-                else
-                {
-                    // Debug.Log("number of points = " + numberOfPoints);
-                    List<Vector3> segmentPoints = new List<Vector3>(numberOfPoints);
-                    for (int j = 0; j < numberOfPoints; j++)
-                    {
-                        segmentPoints.Add(_drawnLines[i].GetPosition(j));
-                    }
-                    _segments3D.Add(segmentPoints);
                 }
             }
 
@@ -735,7 +736,7 @@ namespace HandwritingVR
             return sc;
         }
 
-        private (char c, float accuracy) RecognizeCharacter(List<Segment> segments)
+        private (char c, float accuracy, List<char> bestMatches) RecognizeCharacter(List<Segment> segments)
         {
             int n = segments.Count;
             SearchCharacter sc = ReadFromJson(n);
@@ -745,7 +746,7 @@ namespace HandwritingVR
                 Debug.Log("Character Not Found!!");
             }
 
-            return (result.c, result.accuracy);
+            return (result.c, result.accuracy, result.bestMatches);
         }
 
         private void TrainingsMode(Character c)
@@ -792,20 +793,26 @@ namespace HandwritingVR
         {
             if (c == '-')
             {
-                _word.Remove(_word.Length - 1, 1);
+                if (_word.Length >= 1)
+                {
+                    _word.Remove(_word.Length - 1, 1);
+                }
             }
             else
             {
                 _word.Append(c);
             }
-            
         }
 
         public string GetWord()
         {
             return _word.ToString();
         }
-        
+
+        public List<char> GetBestMatches()
+        {
+            return _bestResults;
+        }
         public void SpaceOnClick()
         {
             Debug.Log("Space Button clicked!");
@@ -816,6 +823,11 @@ namespace HandwritingVR
         {
             Debug.Log("Backspace Button clicked! ");
             SetModifiedWord('-');
+        }
+
+        public void LetterOnClick(Text c)
+        {
+            SetModifiedWord(c.text[0]);
         }
     }
 }
