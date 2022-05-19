@@ -51,7 +51,7 @@ namespace HandwritingVR
       OnDrawing();
     }
 
-    private void OnLetterFinished()
+    public void OnLetterFinished()
     {
       if (collectData != null)
       {
