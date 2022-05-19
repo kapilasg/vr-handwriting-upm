@@ -11,6 +11,8 @@ namespace HandwritingVR
 {
     public class DrawingData : MonoBehaviour
     {
+        public EvaluationLog evalLog;
+        
         private List<LineRenderer> _drawnLines;
         private List<List<Vector3>> _segments3D;
         private List<List<Vector2>> _segments2D;
@@ -25,7 +27,7 @@ namespace HandwritingVR
         private char _foundCharacter = ' ';
         private List<char> _bestResults = new List<char>();
         private StringBuilder _word;
-        
+
         public DrawingData()
         {
             _drawnLines = new List<LineRenderer>();

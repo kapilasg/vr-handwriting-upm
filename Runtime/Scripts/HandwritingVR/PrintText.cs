@@ -10,6 +10,7 @@ namespace HandwritingVR
 {
     public class PrintText : MonoBehaviour
     {
+        public EvaluationLog evalLog;
         public Text displayText;
         public Text writtenText;
         public DrawingData data;
