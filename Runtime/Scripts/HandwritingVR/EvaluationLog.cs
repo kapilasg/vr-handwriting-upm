@@ -1,8 +1,9 @@
 using System.IO;
+using UnityEngine;
 
 namespace HandwritingVR
 {
-    public class EvaluationLog
+    public class EvaluationLog : MonoBehaviour
     {
         public string participantID; // Create folder with this id and multiple file path in awake method 
                                      // Other Classes will have a EvaluationLog Object with access to these files to write to
@@ -16,7 +17,6 @@ namespace HandwritingVR
         private char[][] _bestmatches; // for each letter
         private string _enteredText; // To compare with phrases for final count of how many letters were wrongly recognized
         private string _folderPath;
-        
         
 
         // Folder student1
