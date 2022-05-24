@@ -116,7 +116,7 @@ namespace HandwritingVR
             }
 
             string logFoundChar = _word + "\n";
-            logFoundChar = "Found: "+_foundCharacter+" \n";
+            logFoundChar += "Found: "+_foundCharacter+" \n";
             logFoundChar += "Top five: " + string.Join(", ", _bestResults) + " \n";
             evalLog.LogFoundChars(logFoundChar);
             
