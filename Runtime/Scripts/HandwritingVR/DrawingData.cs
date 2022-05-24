@@ -28,6 +28,10 @@ namespace HandwritingVR
         private List<char> _bestResults = new List<char>();
         private StringBuilder _word;
 
+        private int _spaceCounter;
+        private int _backspaceCounter;
+        private int _byClickCounter;
+
         public DrawingData()
         {
             _drawnLines = new List<LineRenderer>();
@@ -97,11 +101,11 @@ namespace HandwritingVR
                 }
             }
             
-            string trainingsLetter = "y"; // i, j dot preferably as point but circle should work too
+            // string trainingsLetter = "y"; // i, j dot preferably as point but circle should work too
             // StoreDrawing(trainingsLetter);
             // RecoverDrawing(trainingsLetter);
-            Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
-            TrainingsMode(letter);
+            // Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
+            // TrainingsMode(letter);
             
             var found = RecognizeCharacter(segments);
             _foundCharacter = found.c;
@@ -110,6 +114,11 @@ namespace HandwritingVR
             {
                 _word.Append(_foundCharacter.ToString().ToLower());
             }
+
+            string logFoundChar = _word + "\n";
+            logFoundChar = "Found: "+_foundCharacter+" \n";
+            logFoundChar += "Top five: " + string.Join(", ", _bestResults) + " \n";
+            evalLog.LogFoundChars(logFoundChar);
             
             Debug.Log("Found the following character " + found.c + " with the accuracy: " +
                       (found.accuracy * 100) / _segments2D.Count + "%");
@@ -158,6 +167,8 @@ namespace HandwritingVR
                     Debug.Log("number of points <= 3 ->" + numberOfPoints);
                 }
             }
+
+            StoreDrawing3D();
 
             int count = 0;
             for (var index = 0; index < _segments3D.Count; index++)
@@ -558,8 +569,8 @@ namespace HandwritingVR
             // make a matrix out of all points which is a vector list
             var A = Matrix<float>.Build;
             float[,] vectorArray = new float[_numberOfPoints, 3];
-            Debug.Log("(CalcDecomp) numberOfPoints = " + _numberOfPoints);
-            Debug.Log("(CalcDecomp) _segment3D.Count = " + _segments3D.Count);
+            // Debug.Log("(CalcDecomp) numberOfPoints = " + _numberOfPoints);
+            // Debug.Log("(CalcDecomp) _segment3D.Count = " + _segments3D.Count);
             int count = 0;
             for (int i = 0; i < _segments3D.Count; i++)
             {
@@ -756,6 +767,12 @@ namespace HandwritingVR
             WriteToJson(c);
         }
 
+        private void StoreDrawing3D()
+        {
+            SegmentPoints3D sp3d = new SegmentPoints3D(_segments3D);
+            EvaluationLog.LogDrawingData(sp3d);
+        }
+        
         private void StoreDrawing(string fileName)
         {
             SegmentPoints sp = new SegmentPoints(_segments2D, _boundBox2D);
@@ -811,6 +828,11 @@ namespace HandwritingVR
             return _word.ToString();
         }
 
+        public void SetWord()
+        {
+            _word = new StringBuilder();
+        }
+
         public List<char> GetBestMatches()
         {
             return _bestResults;
@@ -819,17 +841,20 @@ namespace HandwritingVR
         {
             Debug.Log("Space Button clicked!");
             SetModifiedWord(' ');
+            evalLog.LogFoundChars(_word + "\n" + "(Space)" +" \n");
         }
         
         public void BackspaceOnClick()
         {
             Debug.Log("Backspace Button clicked! ");
             SetModifiedWord('-');
+            evalLog.LogFoundChars(_word + "\n" + "(Backspace)" +" \n");
         }
 
         public void LetterOnClick(Text c)
         {
             SetModifiedWord(c.text[0]);
+            evalLog.LogFoundChars(_word + "\n" + "(Corrected / byClick: ) " +c.text[0]+" \n");
         }
     }
 }
