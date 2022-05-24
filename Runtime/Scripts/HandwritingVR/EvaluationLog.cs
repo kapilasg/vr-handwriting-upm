@@ -103,7 +103,6 @@ namespace HandwritingVR
                     sw.WriteLine(line);
                 }
             }
-            
             // sw.WriteLine(lines[0]);
             // sw.WriteLine(lines[1]);
         }

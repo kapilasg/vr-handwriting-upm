@@ -97,7 +97,7 @@ namespace HandwritingVR
                 Debug.Log("Displayed text: "+dt);
                 if (wt.Equals(dt))
                 {
-                    Debug.Log("Phrases copied!");
+                    Debug.Log("Phrase copied!");
                     DisplayNextPhrase();
                 }
             }
@@ -136,9 +136,6 @@ namespace HandwritingVR
                 return;
             }
 
-            data.SetWord();
-            writtenText.text = "";
-
             if (_startTime != 0)
             {
                 var endTime = Time.time;
@@ -162,7 +159,8 @@ namespace HandwritingVR
             {
                 _totalTime += phraseTime;
             }
-            
+            data.SetWord();
+            writtenText.text = "";
             _counter++;
             _startTime = Time.time;
         }
