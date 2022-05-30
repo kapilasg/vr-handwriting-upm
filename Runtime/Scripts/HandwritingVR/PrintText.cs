@@ -101,8 +101,6 @@ namespace HandwritingVR
                     DisplayNextPhrase();
                 }
             }
-
-
         }
 
         void SetWrittenText()
@@ -136,22 +134,87 @@ namespace HandwritingVR
                 return;
             }
 
+            var endTime = Time.time;
+            var phraseTime = endTime - data.GetStartTime();
             if (_startTime != 0)
             {
-                var endTime = Time.time;
-                _logTimer = _displayPhrases[_counter] + " "+ _startTime +" "+ endTime +" "+ (endTime - _startTime)+"\n";
+                var firstCharTime = data.GetStartTime();
+                var wpm = (writtenText.text.Length - 1) / (endTime - firstCharTime) * 60 * 0.2;
+                var inf = 0; // Incorrect not fixed
+                var c = 0; // correct letters
+                if (writtenText.text.Length - 5 < _displayPhrases[_counter].Length)
+                {
+                    for (int i = 5; i < writtenText.text.Length; i++)
+                    {
+                        if (writtenText.text[i].Equals(_displayPhrases[_counter][i-5]))
+                        {
+                            c++;
+                        }
+                        else
+                        {
+                            inf++;
+                        }
+                    }
+
+                    inf += _displayPhrases[_counter].Length - writtenText.text.Length - 5;
+                }
+                else
+                {
+                    for (int i = 0; i < _displayPhrases[_counter].Length; i++)
+                    {
+                        if (writtenText.text[i+5].Equals(_displayPhrases[_counter][i]))
+                        {
+                            c++;
+                        }
+                        else
+                        {
+                            inf++;
+                        }
+                    }
+
+                    if (writtenText.text.Length - 5 > _displayPhrases[_counter].Length)
+                    {
+                        inf += writtenText.text.Length - 5 - _displayPhrases[_counter].Length;
+                    }
+                }
+
+                float er = ((float)inf / (writtenText.text.Length - 5)) * 100;
+                var incorrectFixed = data.GetBackSpaceCounter();
+                float kspc = (float)data.GetInputStreamCounter() / (writtenText.text.Length - 5);
+                Debug.Log("kspc:"+kspc);
+                float eksER = (float)(inf + incorrectFixed) / _displayPhrases[_counter].Length * 100;
+                Debug.Log("eksER:"+eksER);
+                float totER = (float)(inf + incorrectFixed) / (c + inf + incorrectFixed) * 100; // INF+IF / (C+INF+IF) * 100%
+                Debug.Log("totEr"+totER);
+                _logTimer = _displayPhrases[_counter] + "\n";
                 _logTimer += writtenText.text + " " + 
                              "correct: " + _displayPhrases[_counter].Equals(writtenText.text[Range.StartAt(5)]) + "\n";
+                _logTimer += "start: " + _startTime + ", firstLetter: " + firstCharTime + ", endTime: " + endTime+"\n";
+                _logTimer += "phrase time: "+(endTime - firstCharTime)+"\n";
+                
+                _logTimer += "WPM: " + wpm +"\n";
+                _logTimer += "ER: "+ er +"% with |T| = "+(writtenText.text.Length - 5)+", INF ="+inf+"\n";
+                
+                _logTimer += "KSPC: " + kspc + "% \n";
+                // keystroke per character
+                _logTimer += "EKS ER: " + eksER + "% \n";
+                _logTimer += "Total ER: "+totER + "% \n";
+                _logTimer += "#Space: " + data.GetSpaceCounter() + ", #Backspace: " + data.GetBackSpaceCounter() + "\n";
+                _logTimer += "#ByClick: " + data.GetByClickCounter() + ", #RecChars: " + data.GetRecCharCounter() +
+                             "\n";
+                _logTimer += "#InputStream: " + data.GetInputStreamCounter() + "\n";
+                _logTimer += "#Display Length: " + _displayPhrases[_counter].Length + "\n";
+                _logTimer += "#Transcribed Length: " + (writtenText.text.Length - 5) + "\n";
+
                 Debug.Log("LogTimeStamp called");
                 // phrase start end phraseTime
                 // writtenPhrase correct: true/false
                 if (_counter == _displayPhrases.Length - 1)
                 {
-                    _logTimer += "Total time: " + _totalTime + "\n";
+                    _logTimer += "Total time: " + _totalTime + " s, " + (_totalTime / 60) +" min \n";
                 }
                 evalLog.LogTimeStamps(_logTimer);
             }
-            var phraseTime = Time.time - _startTime;
             if (!_displayPhrases[_counter].Equals("Pause")
                 && !_displayPhrases[_counter].Equals("The End")
                 && !_displayPhrases[_counter].Equals("Start Evaluation")
@@ -159,7 +222,10 @@ namespace HandwritingVR
             {
                 _totalTime += phraseTime;
             }
-            data.SetWord();
+            
+            data.ResetWord();
+            data.ResetTimer();
+            data.ResetCounter();
             writtenText.text = "";
             _counter++;
             _startTime = Time.time;
