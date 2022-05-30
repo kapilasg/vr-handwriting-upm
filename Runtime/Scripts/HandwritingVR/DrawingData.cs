@@ -28,15 +28,26 @@ namespace HandwritingVR
         private List<char> _bestResults = new List<char>();
         private StringBuilder _word;
 
+        private float _startTime;
+        private bool _timeHandler;
+
         private int _spaceCounter;
         private int _backspaceCounter;
         private int _byClickCounter;
+        private int _recognizedCharCounter;
+        private int _streamInputCounter;
 
         public DrawingData()
         {
             _drawnLines = new List<LineRenderer>();
             _segments3D = new List<List<Vector3>>();
             _word = new StringBuilder();
+            _timeHandler = false;
+            _spaceCounter = 0;
+            _backspaceCounter = 0;
+            _byClickCounter = 0;
+            _recognizedCharCounter = 0;
+            _streamInputCounter = 0;
         }
 
         // Adds LineRenderer Object to the List _drawnLines.
@@ -101,7 +112,7 @@ namespace HandwritingVR
                 }
             }
             
-            // string trainingsLetter = "y"; // i, j dot preferably as point but circle should work too
+            // string trainingsLetter = "h"; // i, j dot preferably as point but circle should work too
             // StoreDrawing(trainingsLetter);
             // RecoverDrawing(trainingsLetter);
             // Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
@@ -113,6 +124,15 @@ namespace HandwritingVR
             if (_foundCharacter != ' ')
             {
                 _word.Append(_foundCharacter.ToString().ToLower());
+            }
+
+            _recognizedCharCounter++;
+            _streamInputCounter++;
+
+            if (_timeHandler)
+            {
+                _startTime = Time.time;
+                _timeHandler = false;
             }
 
             string logFoundChar = _word + "\n";
@@ -828,9 +848,20 @@ namespace HandwritingVR
             return _word.ToString();
         }
 
-        public void SetWord()
+        public void ResetWord()
         {
             _word = new StringBuilder();
+        }
+
+        public float GetStartTime()
+        {
+            return _startTime;
+        }
+
+        public void ResetTimer()
+        {
+            _timeHandler = true;
+            _startTime = 0.0f;
         }
 
         public List<char> GetBestMatches()
@@ -841,6 +872,8 @@ namespace HandwritingVR
         {
             Debug.Log("Space Button clicked!");
             SetModifiedWord(' ');
+            _spaceCounter++;
+            _streamInputCounter++;
             evalLog.LogFoundChars(_word + "\n" + "(Space)" +" \n");
         }
         
@@ -848,13 +881,52 @@ namespace HandwritingVR
         {
             Debug.Log("Backspace Button clicked! ");
             SetModifiedWord('-');
+            _backspaceCounter++;
+            _streamInputCounter++;
             evalLog.LogFoundChars(_word + "\n" + "(Backspace)" +" \n");
         }
 
         public void LetterOnClick(Text c)
         {
             SetModifiedWord(c.text[0]);
+            _byClickCounter++;
+            _streamInputCounter++;
             evalLog.LogFoundChars(_word + "\n" + "(Corrected / byClick: ) " +c.text[0]+" \n");
         }
+
+        public int GetSpaceCounter()
+        {
+            return _spaceCounter;
+        }
+        
+        public int GetBackSpaceCounter()
+        {
+            return _backspaceCounter;
+        }
+        
+        public int GetByClickCounter()
+        {
+            return _byClickCounter;
+        }
+
+        public int GetRecCharCounter()
+        {
+            return _recognizedCharCounter;
+        }
+
+        public int GetInputStreamCounter()
+        {
+            return _streamInputCounter;
+        }
+
+        public void ResetCounter()
+        {
+            _spaceCounter = 0;
+            _backspaceCounter = 0;
+            _byClickCounter = 0;
+            _recognizedCharCounter = 0;
+            _streamInputCounter = 0;
+        }
+
     }
 }
