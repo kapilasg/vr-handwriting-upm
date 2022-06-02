@@ -195,7 +195,7 @@ namespace HandwritingVR
                 _logTimer += "WPM: " + wpm +"\n";
                 _logTimer += "ER: "+ er +"% with |T| = "+(writtenText.text.Length - 5)+", INF ="+inf+"\n";
                 
-                _logTimer += "KSPC: " + kspc + "% \n";
+                _logTimer += "KSPC: " + kspc + " \n";
                 // keystroke per character
                 _logTimer += "EKS ER: " + eksER + "% \n";
                 _logTimer += "Total ER: "+totER + "% \n";
