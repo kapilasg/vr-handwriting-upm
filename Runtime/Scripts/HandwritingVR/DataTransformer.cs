@@ -17,26 +17,19 @@ namespace HandwritingVR
         private Vector3 _directVector1;
         private Vector3 _directVector2;
         
-        private void SetPoints()
+        public int SetPoints(List<LineRenderer> drawnLines)
         {
-            // call this method when the character is finished drawing
-            if (_segments3D == null)
+            _segments3D = new List<List<Vector3>>();
+            
+            for (int i = 0; i < drawnLines.Count-2; i++)
             {
-                Debug.Log("_segments3D is null");
-                return;
-            }
-
-            // Debug.Log("number of _drawLines: "+_drawnLines.Count);
-            // Debug.Log("number of relevant _drawLines: "+ (_drawnLines.Count - 2));
-            for (int i = 0; i < _drawnLines.Count-2; i++)
-            {
-                if (!_drawnLines[i]) continue;
-                int numberOfPoints = _drawnLines[i].positionCount;
+                if (!drawnLines[i]) continue;
+                int numberOfPoints = drawnLines[i].positionCount;
                 // Debug.Log("number of points in line ->" + numberOfPoints);
                 List<Vector3> segmentPoints = new List<Vector3>(numberOfPoints);
                 for (int j = 0; j < numberOfPoints; j++)
                 {
-                    segmentPoints.Add(_drawnLines[i].GetPosition(j));
+                    segmentPoints.Add(drawnLines[i].GetPosition(j));
                 }
                 _segments3D.Add(segmentPoints);
                 if (numberOfPoints <= 3)
@@ -45,12 +38,11 @@ namespace HandwritingVR
                 }
             }
 
-            StoreDrawing3D();
+            // StoreDrawing3D();
 
             int count = 0;
-            for (var index = 0; index < _segments3D.Count; index++)
+            foreach (var segment in _segments3D)
             {
-                var segment = _segments3D[index];
                 for (int j = 0; j < segment.Count; j++)
                 {
                     count++;
@@ -59,12 +51,12 @@ namespace HandwritingVR
 
             _numberOfPoints = count;
             // Debug.Log("_segments3D.Count = " + _segments3D.Count);
+            return count;
         }
-
         
-        private List<List<Vector2>> ProjectSegments2D()
+        public void ProjectSegments2D()
         {
-            var proj2D = new List<List<Vector2>>();
+            _segments2D = new List<List<Vector2>>();
             
             FindPlane();
             
@@ -114,13 +106,11 @@ namespace HandwritingVR
                     projSeg2D.Add(newPoint);
                 }
 
-                proj2D.Add(projSeg2D);
+                _segments2D.Add(projSeg2D);
             }
-            
-            return proj2D;
         }
 
-        private void SegmentLines()
+        public void SegmentLines()
         {
             // _segments2D = new List<List<Vector2>>(); // segment in 2D;
             // Debug.Log("(Before) Number of 2D Segments: " + _segments2D.Count);
@@ -290,7 +280,41 @@ namespace HandwritingVR
             }
             return (line.Count, true);
         }
-        
+
+        public List<Segment> GetCharSegments()
+        {
+            List<Segment> segments = new List<Segment>();
+            for (int i = 0; i < _segments2D.Count; i++)
+            {
+                if (_boundBox2D.Count == 4)
+                {
+                    Segment s = new Segment(i, _segments2D[i], _boundBox2D);
+                    segments.Add(s);
+                }
+                else
+                {
+                    Debug.Log("_boundBox2D has "+ _boundBox2D.Count+" points");
+                }
+            }
+
+            return segments;
+        }
+
+        public List<Segment> GetCharSegment(List<List<Vector2>> seg2D, List<Vector2> box)
+        {
+            List<Segment> segments = new List<Segment>();
+            for (int i = 0; i < seg2D.Count; i++)
+            {
+                if (box.Count == 4)
+                {
+                    Segment s = new Segment(i, seg2D[i], box);
+                    segments.Add(s);
+                }
+            }
+
+            return segments;
+        }
+
         private void FindPlane()
         {
             //Debug.Log("FindPlane() called");
@@ -411,12 +435,6 @@ namespace HandwritingVR
                 }
             }
 
-            /*
-             Debug.Log("dirVec1: " + _directVector1);
-            Debug.Log("dirVec1: (x,y,z) (" + _directVector1.x + ", " + _directVector1.y + ", " + _directVector1.z + ")");
-            Debug.Log("dirVec2: (x,y,z) (" + _directVector2.x + ", " + _directVector2.y + ", " + _directVector2.z + ")");
-            Debug.Log("normVec: (x,y,z) (" + _normalVector.x + ", " + _normalVector.y + ", " + _normalVector.z + ")");
-            */
         }
   
         private Vector3 CalcSupportVector()
@@ -550,7 +568,12 @@ namespace HandwritingVR
             return _segments2D ?? null;
         }
 
-        private List<Vector2> calcBoundBox2D()
+        public List<List<Vector3>> Get3DSegments()
+        {
+            return _segments3D;
+        }
+
+        public void CalcBoundBox2D()
         {
             float minX = _segments2D[0][0].x;
             float maxX = _segments2D[0][0].x;
@@ -586,7 +609,7 @@ namespace HandwritingVR
                 }
             }
 
-            var boundingBox = new List<Vector2>
+            _boundBox2D = new List<Vector2>
             {
                 // upper left corner
                 new (minX, minY),
@@ -594,12 +617,23 @@ namespace HandwritingVR
                 new (maxX, maxY),
                 new (minX, maxY)
             };
-            return boundingBox;
         }
         
         public List<Vector2> GetBoundBox2D()
         {
             return _boundBox2D;
+        }
+
+        public void ResetVariables()
+        {
+            _segments3D = new List<List<Vector3>>();
+            _segments2D = new List<List<Vector2>>();
+            _boundBox2D = new List<Vector2>();
+            _numberOfPoints = 0;
+            _supportVector = new Vector3();
+            _directVector1 = new Vector3();
+            _directVector2 = new Vector3();
+            _normalVector = new Vector3();
         }
 
     }

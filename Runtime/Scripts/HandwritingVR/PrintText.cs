@@ -14,7 +14,8 @@ namespace HandwritingVR
         public EvaluationLog evalLog;
         public Text displayText;
         public Text writtenText;
-        public DrawingData data;
+        // public DrawingData data;
+        public DataManager data;
         public int numberOfPhrases = 5; // 5
         
         private string[] _displayPhrases;

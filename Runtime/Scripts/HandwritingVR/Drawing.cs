@@ -15,7 +15,9 @@ namespace HandwritingVR
     public float lineWidth = 0.01f;
     public float maxSegmentDistance = 0.02f;
     public float minCornerAngle = 10;
-    public DrawingData collectData;
+    // public DrawingData collectData;
+    public DataCollector collectData;
+    public DataManager dataManager;
     public DrawGizmo gizmo;
     public string word;
     public TextInputEvent onLetterDrawn;
@@ -55,8 +57,8 @@ namespace HandwritingVR
     {
       if (collectData != null)
       {
-        char c = collectData.FinishedLetter();
-        word = collectData.GetWord();
+        char c = dataManager.FinishedLetter(); // collectData.FinishedLetter(); // 
+        word = dataManager.GetWord(); // collectData.GetWord(); // dataManager.GetWord();
         Debug.Log("Word: "+word);
         Action onFinishedDrawing = () => onLetterDrawn.Invoke(word);
         // if (gizmo != null) gizmo.SetCollectData(collectData);
@@ -69,6 +71,19 @@ namespace HandwritingVR
           }
         }
       }
+    }
+
+    public void OnEraseLines()
+    {
+      var clones = GameObject.FindGameObjectsWithTag("Line");
+      foreach (var clone in clones)
+      {
+        if (clone.name.Contains("(Clone)"))
+        {
+          Destroy(clone);
+        }
+      }
+      collectData.RemoveAllLines();
     }
 
     private void OnDrawing()

@@ -10,7 +10,8 @@ namespace HandwritingVR
         public Text letter2;
         public Text letter3;
         public Text letter4;
-        public DrawingData data;
+        //public DrawingData data;
+        public DataManager data;
 
         private void Update()
         {

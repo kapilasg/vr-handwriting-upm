@@ -7,20 +7,20 @@ namespace HandwritingVR
     {
         public Color lineColor;
 
-        private DrawingData _collectData;
+        private DataTransformer _dataTransformer;
         private List<Vector3> _boundingBox;
         private List<Vector2> _bound2D;
         private List<List<Vector2>> _proj2D;
 
-        public void SetCollectData(DrawingData data)
+        public void SetCollectData(DataTransformer dt)
         {
-            _collectData = data;
+            _dataTransformer = dt;
             // Debug.Log("DrawGizmo set collect data");
         }
 
         private void OnDrawGizmos()
         {
-            if (_collectData)
+            if (_dataTransformer)
             {
                 /*Gizmos.DrawSphere(_collectData.GetSupportVector(), 0.01f);
                 // Gizmos.DrawLine(_collectData.GetSupportVector(), _collectData.GetNormalVector());
@@ -79,7 +79,7 @@ namespace HandwritingVR
                 }*/
 				
                 Gizmos.color = Color.cyan;
-                _proj2D = _collectData.Get2DSegments();
+                _proj2D = _dataTransformer.Get2DSegments();
                 // Debug.Log("OnDrawGizmos");
                 if (_proj2D is null) return;
                 foreach (var segment in _proj2D)
@@ -91,7 +91,7 @@ namespace HandwritingVR
                 }
                 
                 Gizmos.color = Color.magenta;
-                _bound2D = _collectData.GetBoundBox2D();
+                _bound2D = _dataTransformer.GetBoundBox2D();
                 if (_bound2D is null) return;
                 
                 for (int i = 0; i < _bound2D.Count-1; i++)

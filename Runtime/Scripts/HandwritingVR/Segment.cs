@@ -92,6 +92,7 @@ namespace HandwritingVR
             }
             _segmentLength = l;
         }
+        
         private void SetFuzzyValues()
         {
             SetHP();

@@ -26,12 +26,11 @@ namespace HandwritingVR
             int n = _drawnLines.Count;
             if (n <= 0) return;
             _drawnLines[n - 1] = line;
-
             //Debug.Log("DrawingData: updated Line");
         }
 
         // Removes all lines in _drawnLines.
-        private void RemoveAllLines()
+        public void RemoveAllLines()
         {
             int n = _drawnLines.Count;
             _drawnLines.RemoveRange(0, n);
@@ -40,6 +39,10 @@ namespace HandwritingVR
                 Debug.Log("drawnlines is null");
             }
         }
-        
+
+        public List<LineRenderer> GetDrawnLines()
+        {
+            return _drawnLines;
+        }
     }
 }

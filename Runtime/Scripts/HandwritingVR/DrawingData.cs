@@ -70,7 +70,7 @@ namespace HandwritingVR
         }
 
         // Removes all lines in _drawnLines.
-        private void RemoveAllLines()
+        public void RemoveAllLines()
         {
             int n = _drawnLines.Count;
             _drawnLines.RemoveRange(0, n);
@@ -868,6 +868,7 @@ namespace HandwritingVR
         {
             return _bestResults;
         }
+        
         public void SpaceOnClick()
         {
             Debug.Log("Space Button clicked!");
