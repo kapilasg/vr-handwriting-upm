@@ -41,7 +41,7 @@ namespace HandwritingVR
         
         private void Awake()
         {
-            string[] allPhrases = File.ReadAllLines(Application.dataPath + "/phrases.txt");
+            string[] allPhrases = File.ReadAllLines("Packages/handwriting/Assets/phrases.txt");
             _selectedPhrases = "";
             _displayPhrases = new string[numberOfPhrases*2 + 3];
             Random rand = new Random();
