@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using UnityEditor.PackageManager;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -40,6 +42,7 @@ namespace HandwritingVR
       _lineGameObject.numCornerVertices = 4;
       _lineGameObject.tag = "Line";
       _foundDoubleTrigger = false;
+      
       Debug.Log("Drawing: Awake");
     }
     

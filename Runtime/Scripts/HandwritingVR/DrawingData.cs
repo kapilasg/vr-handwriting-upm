@@ -36,6 +36,8 @@ namespace HandwritingVR
         private int _byClickCounter;
         private int _recognizedCharCounter;
         private int _streamInputCounter;
+        
+        private string _dataPath = "Packages/handwriting/Assets/TrainingBase";
 
         public DrawingData()
         {
@@ -749,16 +751,16 @@ namespace HandwritingVR
             SearchCharacter sc = ReadFromJson(c.numberOfSegments);
             sc.TrainingsMode(c);
             string writeJson = JsonUtility.ToJson(sc);
-            File.WriteAllText(Application.dataPath + "/trainingBase"+c.numberOfSegments+".json", writeJson);
+            File.WriteAllText(_dataPath + "/trainingBase"+c.numberOfSegments+".json", writeJson);
             Debug.Log("End of WriteToJson");
         }
 
         private SearchCharacter ReadFromJson(int fileIndex)
         {
             SearchCharacter sc;
-            if (File.Exists(Application.dataPath + "/trainingBase" + fileIndex + ".json"))
+            if (File.Exists(_dataPath + "/trainingBase" + fileIndex + ".json"))
             {
-                string readJson = File.ReadAllText(Application.dataPath + "/trainingBase"+fileIndex+".json");
+                string readJson = File.ReadAllText(_dataPath + "/trainingBase"+fileIndex+".json");
                 sc = JsonUtility.FromJson<SearchCharacter>(readJson);
             }
             else

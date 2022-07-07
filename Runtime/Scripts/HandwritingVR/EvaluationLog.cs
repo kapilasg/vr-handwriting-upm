@@ -20,6 +20,8 @@ namespace HandwritingVR
 
         private string _phrases;
         private int _counter; 
+        
+        private string _dataPath = "Packages/handwriting/Assets/EvaluationData";
 
         /*
         private string[] _phrases;  // (PrintText.cs)
@@ -37,11 +39,11 @@ namespace HandwritingVR
         private void Awake()
         {
             int participantID = 0;
-            _dirName = Application.dataPath+"/student_" + participantID;
+            _dirName = _dataPath+"/student_" + participantID;
             while (Directory.Exists(_dirName))
             {
                 participantID++;
-                _dirName = Application.dataPath+"/student_" + participantID;
+                _dirName = _dataPath+"/student_" + participantID;
             }
             
             Directory.CreateDirectory(_dirName);
@@ -120,48 +122,6 @@ namespace HandwritingVR
                 }
             }
         }
-
-        // Folder student1
-        // --> File with raw drawing data
-        // --> File Testphrases (Use this to calculate Words-Per-Minute, count letters)
-        // --> File with timestamps per phrase + total time
-        // --> File with recognized character 
-        //             + Top five best matches
-        // Backspace counter?
-        // my watch fell in the water
-        // m
-        // m, w, n, 
-        // x
-        // y, g, v, l,
-
-
-        // or
-
-        // Expected: m
-        // Best Match: m
-        // Top five: m, w, ...
-
-        // Expected: y 
-        // Best Match: g
-        // Top five: g, y, x, q, f
-        // Corrected: yes
-
-        // Expected: " "
-        // Found: " "
-
-        // Expected: w
-        // Best Match: m
-        // Top five: m, x, y, z, k
-        // Corrected: Not possible
-        // Try again: (if found:)
-        // Best Match: m
-        // Top five: m, w, x, ...
-        // Corrected: yes
-
-        // Try again: (if not found:)
-        // Best Match: m
-        // Top five: m, y, x, ...
-        // Corrected: not possible Go to next letter
 
     }
 }
