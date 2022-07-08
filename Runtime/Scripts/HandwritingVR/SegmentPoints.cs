@@ -6,6 +6,7 @@ using UnityEngine.Serialization;
 namespace HandwritingVR
 {
     [Serializable]
+    // Helper class to store and retrieve drawings in and from JSON files
     public class SegmentPoints
     {
         public List<PointsSet> listOfSets;

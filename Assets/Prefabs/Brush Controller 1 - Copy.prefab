@@ -951,7 +951,7 @@ GameObject:
   - component: {fileID: 6058541131932988770}
   - component: {fileID: 6058541131932988771}
   m_Layer: 0
-  m_Name: Brush Controller 1
+  m_Name: Brush Controller 1 - Copy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

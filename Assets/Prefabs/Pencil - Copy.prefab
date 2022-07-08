@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 4662281936793712591}
   - component: {fileID: 154889890956315897}
   m_Layer: 0
-  m_Name: Pencil
+  m_Name: Pencil - Copy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -5,6 +5,8 @@ using UnityEngine;
 
 namespace HandwritingVR
 {
+    // Class to transform raw data into useful data for feature extraction
+    // using Projection, Normalization, Segmentation etc.
     public class DataTransformer : MonoBehaviour
     {
         private List<List<Vector3>> _segments3D;
@@ -17,6 +19,7 @@ namespace HandwritingVR
         private Vector3 _directVector1;
         private Vector3 _directVector2;
         
+        // Method to convert List of LineRenderer objects into List of Vector3 objects 
         public int SetPoints(List<LineRenderer> drawnLines)
         {
             _segments3D = new List<List<Vector3>>();
@@ -25,7 +28,6 @@ namespace HandwritingVR
             {
                 if (!drawnLines[i]) continue;
                 int numberOfPoints = drawnLines[i].positionCount;
-                // Debug.Log("number of points in line ->" + numberOfPoints);
                 List<Vector3> segmentPoints = new List<Vector3>(numberOfPoints);
                 for (int j = 0; j < numberOfPoints; j++)
                 {
@@ -50,10 +52,10 @@ namespace HandwritingVR
             }
 
             _numberOfPoints = count;
-            // Debug.Log("_segments3D.Count = " + _segments3D.Count);
             return count;
         }
         
+        // Method to project 3D vectors onto the fitting plane
         public void ProjectSegments2D()
         {
             _segments2D = new List<List<Vector2>>();
@@ -110,13 +112,12 @@ namespace HandwritingVR
             }
         }
 
+        // Main Method to segment lines
         public void SegmentLines()
         {
             // _segments2D = new List<List<Vector2>>(); // segment in 2D;
-            // Debug.Log("(Before) Number of 2D Segments: " + _segments2D.Count);
             var tmpProjSeg = new List<List<Vector2>>(_segments2D);
             _segments2D = new List<List<Vector2>>();
-            // Debug.Log("tmpProjSeg size "+tmpProjSeg.Count);
             foreach (var line in tmpProjSeg)
             {
                 List<Vector2> segment;
@@ -159,10 +160,9 @@ namespace HandwritingVR
                     Debug.Log("bound exceeded");
                 }
             }
-
-            // Debug.Log("Number of 2D Segments: " + _segments2D.Count);
         }
 
+        // Helper Method to recursively segment lines (divide at corners)
         private (int numOfPoints,bool lastSegment) FindFirstSegmentIndex(List<Vector2> line)
         {
             // Debug.Log("(FindFirstSegment) number of points in line: "+ line.Count);
@@ -281,6 +281,7 @@ namespace HandwritingVR
             return (line.Count, true);
         }
 
+        // Method to create List of Segment objects from instance variables
         public List<Segment> GetCharSegments()
         {
             List<Segment> segments = new List<Segment>();
@@ -300,6 +301,7 @@ namespace HandwritingVR
             return segments;
         }
 
+        // Method to create List of Segment objects from extern list of Vector2's
         public List<Segment> GetCharSegment(List<List<Vector2>> seg2D, List<Vector2> box)
         {
             List<Segment> segments = new List<Segment>();
@@ -315,9 +317,9 @@ namespace HandwritingVR
             return segments;
         }
 
+        // Method to find plane fitting best through all points from drawing
         private void FindPlane()
         {
-            //Debug.Log("FindPlane() called");
             _supportVector = CalcSupportVector();
 
             var v = CalcDecomp();
@@ -326,10 +328,6 @@ namespace HandwritingVR
             var normalVec = v.Column(2);
 
             float i = dirVec1.DotProduct(dirVec2);
-            if (i == 0)
-            {
-                Debug.Log("dirVec1 and dirVec2 are orthogonal to each other!!!");
-            }
 
             var dv1 = new Vector3(dirVec1[0], dirVec1[1], dirVec1[2]).normalized;
             var dv2 = new Vector3(dirVec2[0], dirVec2[1], dirVec2[2]).normalized;
@@ -340,84 +338,68 @@ namespace HandwritingVR
             var ux = Vector3.Dot(dv1, Vector3.up);
             var ry = Vector3.Dot(dv2, Vector3.right);
             
-            //Debug.Log("x = " + x + ", y = " + y + ", ux = " + ux +", ry = " + ry);
             // _dirVec1 soll nach rechts zeigen und _dirVec2 nach oben
             _directVector1 = dv1;
             _directVector2 = dv2;
             if (x >= 0.5)
             {
                 // dv1 zeigt nach rechts
-                //Debug.Log("1");
                 if (y > 0.5)
                 {
-                    //Debug.Log("2");
                     // dv2 zeigt nach oben
                     _directVector1 = dv1;
                     _directVector2 = dv2;
                 }
                 if (y < -0.5)
                 {
-                    //Debug.Log("3");
                     // dv2 zeight nach unten
                     _directVector1 = dv1;
                     _directVector2 = -1 * dv2;
                 }
             }
-            //Debug.Log("4");
             if (x < -0.5)
             {
-                //Debug.Log("5");
                 // dv1 zeigt nach links
                 if (y > 0.5)
                 {
-                    //Debug.Log("5");
                     // dv2 zeigt nach oben
                     _directVector2 = dv2;
                     _directVector1 = -1 * dv1;
                 }
                 if (y < -0.5)
                 {
-                    //Debug.Log("6");
                     // dv2 zeight nach unten
                     _directVector2 = -1 * dv2;
                     _directVector1 = -1 * dv1;
                 }
             }
-            //Debug.Log("7");
             if (ux >= 0.5)
             {
-                //Debug.Log("8");
                 // dv1 zeigt nach oben soll aber nach rechts zeigen
                 if (ry > 0.5)
                 {
-                    //Debug.Log("9");
                     // dv2 zeigt nach rechts
                     _directVector1 = dv2;
                     _directVector2 = dv1;
                 }
                 if (ry < -0.5)
                 {
-                    //Debug.Log("10");
                     // dv2 zeight nach links
                     _directVector1 = -1 * dv2;
                     _directVector2 = dv1;
                 }
             }
-            //Debug.Log("11");
             if (ux <= -0.5)
             {
-                //Debug.Log("12");
                 // dv1 zeigt nach unten soll aber nach rechts zeigen
                 if (ry > 0.5)
                 {
-                    //Debug.Log("13");
                     // dv2 zeigt nach rechts
                     _directVector1 = dv2;
                     _directVector2 = -1 * dv1;
                 }
                 if (ry < -0.5)
                 {
-                    //Debug.Log("14");
                     // dv2 zeight nach links
                     _directVector1 = -1 * dv2;
                     _directVector2 = -1 * dv1;
@@ -427,19 +409,17 @@ namespace HandwritingVR
             if (Camera.main != null)
             {
                 var cameraVector = Camera.main.transform.forward;
-                //Debug.Log("camVec: (x,y,z) (" + cameraVector.x + ", " + cameraVector.y + ", " + cameraVector.z + ")");
                 if (Vector3.Dot(_normalVector, cameraVector.normalized) < 0)
                 {
-                    //Debug.Log("change normal direction");
                     _normalVector *= -1;
                 }
             }
 
         }
   
+        // Method to find center of drawing
         private Vector3 CalcSupportVector()
         {
-            //Debug.Log("CalcSupportVector() called");
             Vector3 center = new Vector3(0, 0, 0);
             _numberOfPoints = 0;
             foreach (List<Vector3> segment in _segments3D)
@@ -452,27 +432,21 @@ namespace HandwritingVR
                     _numberOfPoints++;
                 }
             }
-
-            //Debug.Log("numberOfPoints in calcSupportvector = " + _numberOfPoints);
             center /= _numberOfPoints;
-            //Debug.Log("center (x,y,z): (" + center.x + ", " + center.y + ", " + center.z + ")");
             return center;
         }
 
+        // Method to calculate singular vector decomposition and get vectors to span fitting plane
         private Matrix<float> CalcDecomp()
         {
-            //Debug.Log("CalcDecomp() called");
             // make a matrix out of all points which is a vector list
             var A = Matrix<float>.Build;
             float[,] vectorArray = new float[_numberOfPoints, 3];
-            // Debug.Log("(CalcDecomp) numberOfPoints = " + _numberOfPoints);
-            // Debug.Log("(CalcDecomp) _segment3D.Count = " + _segments3D.Count);
             int count = 0;
             for (int i = 0; i < _segments3D.Count; i++)
             {
                 for (int j = 0; j < _segments3D[i].Count; j++)
                 {
-                    //Debug.Log("count =" + count + ", i =" + i + ", j =" + j);
                     vectorArray[count, 0] = _segments3D[i][j].x;
                     vectorArray[count, 1] = _segments3D[i][j].y;
                     vectorArray[count, 2] = _segments3D[i][j].z;
@@ -484,10 +458,10 @@ namespace HandwritingVR
             var decomp = a.Svd(true);
             var v = decomp.VT.Transpose(); 
             // returns 3x3 matrix where the first 2 colums are "Richtungvektoren" and the 3. is normal vector to plane.
-            //Debug.Log("calc 3x3 matrix v = " + v.ToString());
             return v;
         }
 
+        // Method to get projected Vector3
         private Vector3 ProjectToPlane(Vector3 v)
         {
             Vector3 result;
@@ -498,10 +472,9 @@ namespace HandwritingVR
             return result;
         }
         
+        // Method to get 3D bounding box of drawn letter
         private List<Vector3> GetBoundingBox3D(List<List<Vector3>> projSeg3D)
         {
-
-            // Debug.Log("projectedSegment2 " + _projectedSegments.Count);
             var v = Vector3.Dot(_directVector1, projSeg3D[0][0]);
             var w = Vector3.Dot(_directVector2, projSeg3D[0][0]);
 
@@ -555,6 +528,7 @@ namespace HandwritingVR
             return boundingBox;
         }
 
+        // Method to convert Vector3 to Vector2
         private Vector2 Get2DFrom3D(Vector3 v)
         {
             var x = Vector3.Dot(_directVector1, v);
@@ -563,16 +537,19 @@ namespace HandwritingVR
             return new Vector2(x, y);
         }
 
+        // Method to get list of 2D segments
         public List<List<Vector2>> Get2DSegments()
         {
             return _segments2D ?? null;
         }
 
+        // Method to get list of 3D segments
         public List<List<Vector3>> Get3DSegments()
         {
             return _segments3D;
         }
 
+        // Method to calculate 2D bounding box
         public void CalcBoundBox2D()
         {
             float minX = _segments2D[0][0].x;
@@ -619,11 +596,13 @@ namespace HandwritingVR
             };
         }
         
+        // Method to get 2D bounding box of drawn and normalized letter
         public List<Vector2> GetBoundBox2D()
         {
             return _boundBox2D;
         }
 
+        // Method to reset all instance variables
         public void ResetVariables()
         {
             _segments3D = new List<List<Vector3>>();

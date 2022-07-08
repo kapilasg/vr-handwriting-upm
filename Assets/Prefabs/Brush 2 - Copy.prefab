@@ -248,7 +248,7 @@ GameObject:
   - component: {fileID: 6107678233235176149}
   - component: {fileID: 5224260378840096437}
   m_Layer: 0
-  m_Name: Brush 2
+  m_Name: Brush 2 - Copy
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

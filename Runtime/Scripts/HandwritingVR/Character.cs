@@ -4,8 +4,8 @@ using UnityEngine;
 
 namespace HandwritingVR
 {
-
     [Serializable]
+    // Class Character models a letter.
     public class Character
     {
         public char letter;
@@ -17,10 +17,9 @@ namespace HandwritingVR
             letter = c;
             numberOfSegments = numOfSegments;
             segments = list;
-            Debug.Log("Character "+ c +" created!! With number of segments: " + numOfSegments);
         }
         
-        
+        // Method to compare how similar characters look like
         public int CompareCharacters(List<Segment> providedSegments)
         {
             int compareValue = 0;

@@ -9,12 +9,12 @@ using Random = System.Random;
 
 namespace HandwritingVR
 {
+    // Class to display text on virtual screen (text to be copied and text the user writes)
     public class PrintText : MonoBehaviour
     {
         public EvaluationLog evalLog;
         public Text displayText;
         public Text writtenText;
-        // public DrawingData data;
         public DataManager data;
         public int numberOfPhrases = 5; // 5
         
@@ -25,6 +25,8 @@ namespace HandwritingVR
         private float _totalTime;
         private string _logTimer;
 
+        /* Different screens accessible by clicking "next phrases" button*/
+        
         // "Press Start and next Phrase when you are ready! (Practice round)"
         // "hello world"
         // "Start Evaluation"
@@ -54,11 +56,9 @@ namespace HandwritingVR
                     r = rand.Next(0, 500);
                 }
                 selectedLineNumbers.Add(r);
-                // Debug.Log("random phrase: "+allPhrases[r]);
                 _selectedPhrases += allPhrases[r] + "\n";
             }
             evalLog.LogPhrases(_selectedPhrases);
-            // Debug.Log(_selectedPhrases);
             _displayPhrases[0] = "Press Start for Practice round";
             _displayPhrases[1] = "hello world";
             _displayPhrases[2] = "Start Evaluation";
@@ -77,11 +77,6 @@ namespace HandwritingVR
                 _displayPhrases[i] = allPhrases[selectedLineNumbers[c]].ToLower();
                 c++;
             }
-
-            foreach (var phrase in _displayPhrases)
-            {
-                Debug.Log(phrase);
-            }
             
             _counter = 0;
         }
@@ -94,11 +89,11 @@ namespace HandwritingVR
             {
                 var wt = writtenText.text[Range.StartAt(5)];
                 var dt = displayText.text;
-                Debug.Log("Written text: "+wt);
-                Debug.Log("Displayed text: "+dt);
+                // Debug.Log("Written text: "+wt);
+                // Debug.Log("Displayed text: "+dt);
                 if (wt.Equals(dt))
                 {
-                    Debug.Log("Phrase copied!");
+                    // Debug.Log("Phrase copied!");
                     DisplayNextPhrase();
                 }
             }
@@ -128,6 +123,7 @@ namespace HandwritingVR
             displayText.text = _displayPhrases[_counter];  //"my watch fell in the water";
         }
 
+        // Method to display next phrase and log evaluation data
         public void DisplayNextPhrase()
         {
             if (_counter >= _displayPhrases.Length-1)
@@ -182,11 +178,11 @@ namespace HandwritingVR
                 float er = ((float)inf / (writtenText.text.Length - 5)) * 100;
                 var incorrectFixed = data.GetBackSpaceCounter();
                 float kspc = (float)data.GetInputStreamCounter() / (writtenText.text.Length - 5);
-                Debug.Log("kspc:"+kspc);
+                // Debug.Log("kspc:"+kspc);
                 float eksER = (float)(inf + incorrectFixed) / _displayPhrases[_counter].Length * 100;
-                Debug.Log("eksER:"+eksER);
+                // Debug.Log("eksER:"+eksER);
                 float totER = (float)(inf + incorrectFixed) / (c + inf + incorrectFixed) * 100; // INF+IF / (C+INF+IF) * 100%
-                Debug.Log("totEr"+totER);
+                // Debug.Log("totEr"+totER);
                 _logTimer = _displayPhrases[_counter] + "\n";
                 _logTimer += writtenText.text + " " + 
                              "correct: " + _displayPhrases[_counter].Equals(writtenText.text[Range.StartAt(5)]) + "\n";
@@ -207,7 +203,6 @@ namespace HandwritingVR
                 _logTimer += "#Display Length: " + _displayPhrases[_counter].Length + "\n";
                 _logTimer += "#Transcribed Length: " + (writtenText.text.Length - 5) + "\n";
 
-                Debug.Log("LogTimeStamp called");
                 // phrase start end phraseTime
                 // writtenPhrase correct: true/false
                 if (_counter == _displayPhrases.Length - 1)

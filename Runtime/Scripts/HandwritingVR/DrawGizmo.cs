@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace HandwritingVR
 {
+    // Class for visual debugging (currently not in use)
     public class DrawGizmo : MonoBehaviour
     {
         public Color lineColor;
@@ -15,7 +16,6 @@ namespace HandwritingVR
         public void SetCollectData(DataTransformer dt)
         {
             _dataTransformer = dt;
-            // Debug.Log("DrawGizmo set collect data");
         }
 
         private void OnDrawGizmos()
@@ -80,7 +80,6 @@ namespace HandwritingVR
 				
                 Gizmos.color = Color.cyan;
                 _proj2D = _dataTransformer.Get2DSegments();
-                // Debug.Log("OnDrawGizmos");
                 if (_proj2D is null) return;
                 foreach (var segment in _proj2D)
                 {

@@ -7,6 +7,10 @@ using UnityEngine.UI;
 
 namespace HandwritingVR
 {
+    // Class to access raw data from DataCollector class and send it to DataTransformer class
+    // and use results to create the text-input and more.
+    
+    // This class also contains methods relevant for the evaluation
     public class DataManager : MonoBehaviour
     {
         public DataCollector dataCollector;
@@ -28,13 +32,6 @@ namespace HandwritingVR
 
         private string _dataPath = "Packages/handwriting/Assets/TrainingBase";
         
-        // DataManager accesses raw data from dataCollector 
-        // sends data to dataTransformer and then stores result back in dataCollector
-        // Transforming includes planeFinding, Projection, Normalization, calcBoundingBox and Segmentation
-        
-        // The FindCharacter, Store/Retrieve function are in DataManager!!!
-        // Here are also all Evaluation relevant functions
-
         public DataManager()
         {
             _word = new StringBuilder();
@@ -46,7 +43,8 @@ namespace HandwritingVR
             _streamInputCounter = 0;
         }
         
-        
+        // Method to get Find Character after drawing it
+        // Sets _foundChar and _bestResults
         public char FinishedLetter()
         {
             var numOfPoints = dataTransformer.SetPoints(dataCollector.GetDrawnLines());
@@ -65,10 +63,14 @@ namespace HandwritingVR
             dataTransformer.SegmentLines();
 
             List<Segment> segments = dataTransformer.GetCharSegments();
-
-            // string trainingsLetter = "h"; // i, j dot preferably as point but circle should work too
+            
+            // string trainingsLetter = " ";
+            
+            /* Uncomment this to store drawing*/
             // StoreDrawing(trainingsLetter);
             // RecoverDrawing(trainingsLetter);
+            
+            /* Uncomment this to extend your training base*/
             // Character letter = new Character(trainingsLetter[0], _segments2D.Count, segments);
             // TrainingsMode(letter);
             
@@ -99,19 +101,24 @@ namespace HandwritingVR
             ResetVariables();
             return found.c;
         }
+        
+        // Method to remove all collected data, get ready for next drawn character
         private void ResetVariables()
         {
             dataCollector.RemoveAllLines();
             dataTransformer.ResetVariables();
         }
+        
+        // Method to store character in JSON format to extend training base
         private void WriteToJson(Character c)
         {
             SearchCharacter sc = ReadFromJson(c.numberOfSegments);
             sc.TrainingsMode(c);
             string writeJson = JsonUtility.ToJson(sc);
             File.WriteAllText(_dataPath + "/trainingBase"+c.numberOfSegments+".json", writeJson);
-            Debug.Log("End of WriteToJson");
         }
+        
+        // Method to read characters from JSON file
         private SearchCharacter ReadFromJson(int fileIndex)
         {
             SearchCharacter sc;
@@ -122,11 +129,13 @@ namespace HandwritingVR
             }
             else
             {
-                Debug.Log("File with index "+fileIndex+" doesn't exist");
+                // Debug.Log("File with index "+fileIndex+" doesn't exist");
                 sc = new SearchCharacter();
             }
             return sc;
         }
+        
+        // Method to find most similar character 
         private (char c, float accuracy, List<char> bestMatches) RecognizeCharacter(List<Segment> segments)
         {
             int n = segments.Count;
@@ -139,12 +148,14 @@ namespace HandwritingVR
 
             return (result.c, result.accuracy, result.bestMatches);
         }
-
+        
+        // Method to activate Training mode
         private void TrainingsMode(Character c)
         {
             WriteToJson(c);
         }
-
+        
+        // Helper method to store drawings (useful for evaluation log)
         private void StoreDrawing3D()
         {
             var seg3D = dataTransformer.Get3DSegments();
@@ -152,23 +163,21 @@ namespace HandwritingVR
             EvaluationLog.LogDrawingData(sp3d);
         }
         
+        // Helper method to store drawing in JSON file
         private void StoreDrawing(string fileName)
         {
             var seg2D = dataTransformer.Get2DSegments();
             var box2D = dataTransformer.GetBoundBox2D();
             SegmentPoints sp = new SegmentPoints(seg2D, box2D);
             string json = JsonUtility.ToJson(sp);
+            Debug.Log(File.Exists(Application.dataPath + "/storedDrawing_" + fileName + ".json")
+                ? "File created!!"
+                : "File not created!!");
             File.WriteAllText(Application.dataPath + "/storedDrawing_"+fileName+".json", json);
-            if (File.Exists(Application.dataPath + "/storedDrawing_" + fileName + ".json"))
-            {
-                Debug.Log("File created!!");
-            }
-            else
-            {
-                Debug.Log("File not created!!");
-            }
-        }
 
+        }
+        
+        // Helper method to retrieve drawing in JSON file (useful for testing recognition function)
         private void RecoverDrawing(string fileName)
         {
             if (File.Exists(Application.dataPath + "/storedDrawing_"+fileName+".json"))
@@ -178,7 +187,7 @@ namespace HandwritingVR
                 var segments2D = sp.GetPoints();
                 var boundBox2D = sp.boundBox;
                 // To create a List<Segment> to query for char 
-                // use dataTransformer.GetCharSegment(segments2D, boundBox2D)
+                // dataTransformer.GetCharSegment(segments2D, boundBox2D); // turns list of Vector2(segments2D) to List of Segments
             }
             else
             {
@@ -186,12 +195,13 @@ namespace HandwritingVR
             }
         }
         
-        
+        // Method to get found character
         public char GetCharacter()
         {
             return _foundChar;
         }
-
+        
+        // Method to control Text-input by setting next character or removing last character
         public void SetModifiedWord(char c)
         {
             if (c == '-')
@@ -206,51 +216,59 @@ namespace HandwritingVR
                 _word.Append(c);
             }
         }
-
+        
+        // Method to get word/text
         public string GetWord()
         {
             return _word.ToString();
         }
-
+        
+        // Method to clear written word/text
         public void ResetWord()
         {
             _word = new StringBuilder();
         }
-
+        
+        // Method to start timer for evaluation purpose (WPM)
         public float GetStartTime()
         {
             return _startTime;
         }
-
+        
+        // Method to restart timer
         public void ResetTimer()
         {
             _timeHandler = true;
             _startTime = 0.0f;
         }
-
+        
+        // Method to get 4 closest matches from drawing (improves text-input method by using them as buttons)
         public List<char> GetBestMatches()
         {
             return _bestResults;
         }
         
+        // Method to get space in text-input by clicking a button
         public void SpaceOnClick()
         {
-            Debug.Log("Space Button clicked!");
+            // Debug.Log("Space Button clicked!");
             SetModifiedWord(' ');
             _spaceCounter++;
             _streamInputCounter++;
             evalLog.LogFoundChars(_word + "\n" + "(Space)" +" \n");
         }
         
+        // Method to remove last letter in text-input by clicking a button
         public void BackspaceOnClick()
         {
-            Debug.Log("Backspace Button clicked! ");
+            // Debug.Log("Backspace Button clicked! ");
             SetModifiedWord('-');
             _backspaceCounter++;
             _streamInputCounter++;
             evalLog.LogFoundChars(_word + "\n" + "(Backspace)" +" \n");
         }
-
+        
+        // Method to get one of the best matches in text-input by clicking a button
         public void LetterOnClick(Text c)
         {
             SetModifiedWord(c.text[0]);
@@ -258,32 +276,38 @@ namespace HandwritingVR
             _streamInputCounter++;
             evalLog.LogFoundChars(_word + "\n" + "(Corrected / byClick: ) " +c.text[0]+" \n");
         }
-
+        
+        // Method to get number of space clicks (for evaluation)
         public int GetSpaceCounter()
         {
             return _spaceCounter;
         }
         
+        // Method to get number of backspace clicks (for evaluation)
         public int GetBackSpaceCounter()
         {
             return _backspaceCounter;
         }
         
+        // Method to get number of letter clicks (for evaluation)
         public int GetByClickCounter()
         {
             return _byClickCounter;
         }
-
+        
+        // Method to get number of recognized character (for evaluation)
         public int GetRecCharCounter()
         {
             return _recognizedCharCounter;
         }
-
+        
+        // Method to get number of stream inputs
         public int GetInputStreamCounter()
         {
             return _streamInputCounter;
         }
-
+        
+        // Method to reset all counters
         public void ResetCounter()
         {
             _spaceCounter = 0;

@@ -6,6 +6,7 @@ using UnityEngine.Events;
 
 namespace HandwritingVR
 {
+  // Class for drawing characters in mid-air using the drawing tool
   public class Drawing : MonoBehaviour
   {
     [Serializable]
@@ -17,7 +18,6 @@ namespace HandwritingVR
     public float lineWidth = 0.01f;
     public float maxSegmentDistance = 0.02f;
     public float minCornerAngle = 10;
-    // public DrawingData collectData;
     public DataCollector collectData;
     public DataManager dataManager;
     public DrawGizmo gizmo;
@@ -42,8 +42,6 @@ namespace HandwritingVR
       _lineGameObject.numCornerVertices = 4;
       _lineGameObject.tag = "Line";
       _foundDoubleTrigger = false;
-      
-      Debug.Log("Drawing: Awake");
     }
     
     private void Update()
@@ -62,7 +60,7 @@ namespace HandwritingVR
       {
         char c = dataManager.FinishedLetter(); // collectData.FinishedLetter(); // 
         word = dataManager.GetWord(); // collectData.GetWord(); // dataManager.GetWord();
-        Debug.Log("Word: "+word);
+        // Debug.Log("Word: "+word);
         Action onFinishedDrawing = () => onLetterDrawn.Invoke(word);
         // if (gizmo != null) gizmo.SetCollectData(collectData);
         var clones = GameObject.FindGameObjectsWithTag("Line");
@@ -147,7 +145,6 @@ namespace HandwritingVR
 
     private void OnDisable()
     {
-      Debug.Log("Drawing: OnDisable");
       _currentLine = null;
     }
 

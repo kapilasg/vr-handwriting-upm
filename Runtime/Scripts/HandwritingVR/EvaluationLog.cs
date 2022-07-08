@@ -5,11 +5,9 @@ using UnityEngine;
 
 namespace HandwritingVR
 {
+    // Class to log evaluation data in text or JSON files 
     public class EvaluationLog : MonoBehaviour
     {
-        // public string participantID; // Create folder with this id and multiple file path in awake method 
-                                     // Other Classes will have a EvaluationLog Object with access to these files to write to
-
         private string _dirName;
         private static string _rawDrawingDataFile;
         private static string _phrasesFile; 
@@ -22,20 +20,7 @@ namespace HandwritingVR
         private int _counter; 
         
         private string _dataPath = "Packages/handwriting/Assets/EvaluationData";
-
-        /*
-        private string[] _phrases;  // (PrintText.cs)
-        private char[] _recognizedChars; // 
-        private int _misclassifiedChars;
-        private float _time; // For words per minute
-        private int _numberOfWords; // get from phrases
-        private int _numberOfChars;
-        private int _countBackspace; // == misclassified
-        private char[][] _bestMatches; // for each letter
-        private string _enteredText; // To compare with phrases for final count of how many letters were wrongly recognized
-        private string _folderPath;
-        */
-
+        
         private void Awake()
         {
             int participantID = 0;
@@ -62,6 +47,7 @@ namespace HandwritingVR
             _counter = 0;
         }
 
+        // Method to log drawing data in JSON file
         public static void LogDrawingData(SegmentPoints3D sp3d)
         {
             if (new FileInfo(_rawDrawingDataFile).Length == 0 )
@@ -83,12 +69,13 @@ namespace HandwritingVR
             }
         }
 
+        // Method to set which phrases are copied
         public void LogPhrases(string text)
         {
             _phrases = text;
-            // Debug.Log("_phrases in evalLog: "+_phrases);
         }
 
+        // Method to log copied phrases and timestamps
         public void LogTimeStamps(string text)
         {
             if (_counter == 0)
@@ -105,13 +92,11 @@ namespace HandwritingVR
                     sw.WriteLine(line);
                 }
             }
-            // sw.WriteLine(lines[0]);
-            // sw.WriteLine(lines[1]);
         }
 
+        // Method to log which characters were recognized for the drawing in text file
         public void LogFoundChars(string str)
         {
-            // StreamWriter sw = File.AppendText(_recognizedCharFile);
             string[] lines = str.Split("\n");
 
             using (StreamWriter w = File.AppendText(_recognizedCharFile))

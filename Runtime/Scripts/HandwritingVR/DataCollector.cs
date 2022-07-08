@@ -3,8 +3,10 @@ using UnityEngine;
 
 namespace HandwritingVR
 {
+    // Class DataCollector contains methods to control data collection
     public class DataCollector : MonoBehaviour
     {
+        // Instance variable to collect drawn lines
         private List<LineRenderer> _drawnLines;
 
         public DataCollector()
@@ -12,24 +14,21 @@ namespace HandwritingVR
             _drawnLines = new List<LineRenderer>();
         }
 
+        // Method to collect lines
         public void AddLine(LineRenderer line)
         {
-            // Debug.Log("Line added!!! with "+line.positionCount+" points");
             _drawnLines.Add(line);
-            //Debug.Log("DrawingData: added Line");
         }
 
-        // Updates the last added line in _drawnLines with the new Line.
+        // Method to update the last added line in _drawnLines with a new line.
         public void UpdateLine(LineRenderer line)
         {
-            //Debug.Log("DrawingData: updated Line");
             int n = _drawnLines.Count;
             if (n <= 0) return;
             _drawnLines[n - 1] = line;
-            //Debug.Log("DrawingData: updated Line");
         }
 
-        // Removes all lines in _drawnLines.
+        // Method to remove all lines in _drawnLines.
         public void RemoveAllLines()
         {
             int n = _drawnLines.Count;
@@ -40,6 +39,7 @@ namespace HandwritingVR
             }
         }
 
+        // Method to retrieve instance variable _drawnLines
         public List<LineRenderer> GetDrawnLines()
         {
             return _drawnLines;

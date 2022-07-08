@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace HandwritingVR
 {
+    // Class to search in training base for most similar character
     public class SearchCharacter
     {
         public List<Character> characterList;
@@ -32,17 +33,6 @@ namespace HandwritingVR
                 characterList.Add(c);
             }
         }
-        
-        /*public void RecognitionMode2(List<Segment> segments)
-        {
-            // Open trainingsfile with same number of segments
-            // TODO later Min-Max Inference: 
-            // IF segment[0] has VL = Very High
-            // AND segment[1] has HL = Very High
-            // Then look in trainingsfile for similar structure
-            // And RETURN their character 
-
-        }*/
 
         public (char c, float accuracy, List<char> bestMatches) RecognitionMode(List<Segment> segments)
         {
@@ -88,16 +78,25 @@ namespace HandwritingVR
                 }
             }
             bestMatches.Reverse();
-            Debug.Log("Length of Best matches: "+ bestMatches.Count);
             float accuracy = bestValue / 19f;
             return (bestChar, accuracy, bestMatches);
         }
-
-        private bool DuplicateExists(char c, List<char> list)
+        
+        /*public void RecognitionMode2(List<Segment> segments)
         {
-            for (int i = 0; i < list.Count; i++)
+            // Open trainingsfile with same number of segments
+            // TODO later proper Min-Max Inference: 
+            // IF segment[0] has VL = Very High
+            // AND segment[1] has HL = Very High
+            // Then look in trainingsfile for similar structure
+            // And RETURN their character 
+        }*/
+
+        private static bool DuplicateExists(char c, List<char> list)
+        {
+            foreach (var t in list)
             {
-                if (list[i] == c)
+                if (t == c)
                 {
                     return true;
                 }

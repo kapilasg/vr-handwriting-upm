@@ -7,6 +7,7 @@ namespace HandwritingVR
 {
 
     [Serializable]
+    // Class to extract features from Segments
     public class Segment
     {
         public int segmentNumber;
@@ -15,7 +16,7 @@ namespace HandwritingVR
         private List<Vector2> _segBoundBox;
         private float _segmentLength;
 
-        // Fuzzy values of segment
+        // Fuzzy description values of segment
         // HP Horizontal Position
         public String HP;
 
@@ -72,8 +73,7 @@ namespace HandwritingVR
 
         // OL O-Like
         public String OL;
-
-
+        
         public Segment(int number, List<Vector2> segmentPoints, List<Vector2> box)
         {
             segmentNumber = number;
@@ -83,6 +83,7 @@ namespace HandwritingVR
             SetFuzzyValues();
         }
 
+        // Method to set Length
         private void SetLength()
         {
             var l = 0f;
@@ -93,6 +94,7 @@ namespace HandwritingVR
             _segmentLength = l;
         }
         
+        // Method to set all feature values
         private void SetFuzzyValues()
         {
             SetHP();
@@ -108,7 +110,8 @@ namespace HandwritingVR
             ArcCalculations();
             SetOL();
         }
-
+        
+        // Method to calculate bounding box for segment
         private void SetSegmentBox()
         {
             if (_points == null)
@@ -160,22 +163,23 @@ namespace HandwritingVR
 
         }
 
+        // Method to set horizontal position
         private void SetHP()
         {
             float xCenter = (_segBoundBox[0].x + _segBoundBox[1].x) / 2;
             var hp = (xCenter - _charBoundBox[0].x) / (_charBoundBox[1].x - _charBoundBox[0].x);
-            // Debug.Log("relativ Horizontal position: "+hp);
             HP = MembershipFunction(hp);
         }
 
+        // Method to set vertical position
         private void SetVP()
         {
             float yCenter = (_segBoundBox[1].y + _segBoundBox[2].y) / 2;
             var vp = (yCenter - _charBoundBox[1].y) / (_charBoundBox[2].y - _charBoundBox[1].y);
-            // Debug.Log("relativ vertical position: "+vp);
             VP = MembershipFunction(vp);
         }
 
+        // Method to set horizontal length
         private void SetHLEN()
         {
             float d = _segBoundBox[1].x - _segBoundBox[0].x; // Vector2.Distance(_points[0], _points[^1]);
@@ -185,10 +189,10 @@ namespace HandwritingVR
             {
                 hlen = 1f;
             }
-            // Debug.Log("HLEN value: "+hlen);
             HLEN = MembershipFunction(hlen);
         }
 
+        // Method to set vertical length
         private void SetVLEN()
         {
             float d = _segBoundBox[2].y - _segBoundBox[1].y; // Vector2.Distance(_points[0], _points[^1]);
@@ -198,10 +202,10 @@ namespace HandwritingVR
             {
                 vlen = 1f;
             }
-            // Debug.Log("VLEN value: "+vlen);
             VLEN = MembershipFunction(vlen);
         }
 
+        // Method to set slant length
         private void SetSLEN()
         {
             float d = Vector2.Distance(_segBoundBox[0], _segBoundBox[2]); // Vector2.Distance(_points[0], _points[^1]);
@@ -211,22 +215,24 @@ namespace HandwritingVR
             {
                 slen = 1f;
             }
-            // Debug.Log("SLEN value: "+slen);
             SLEN = MembershipFunction(slen);
         }
 
+        // Method to set center on x-axis
         private void SetSX()
         {
             float xCenter = (_segBoundBox[0].x + _segBoundBox[1].x) / 2;
             SX = MembershipFunction(xCenter);
         }
 
+        // Method to set center on y-axis
         private void SetSY()
         {
             float yCenter = (_segBoundBox[1].y + _segBoundBox[2].y) / 2;
             SY = MembershipFunction(yCenter);
         }
 
+        // Method to find and set straightness and arc-ness of segment
         private void SetMSTRandMARC()
         {
             float d = Vector2.Distance(_points[0], _points[^1]);
@@ -241,10 +247,9 @@ namespace HandwritingVR
             var marc = 1 - mstr;
             MSTR = MembershipFunction(mstr);
             MARC = MembershipFunction(marc);
-            // Debug.Log("SegmentNumber "+segmentNumber+", Straightness: "+MSTR);
-            // Debug.Log("SegmentNumber "+segmentNumber+", Arcness: "+MARC);
         }
 
+        // Helper method for angle calculation
         private float Delta(float x, float b, float c)
         {
             var res = 0.0f;
@@ -258,6 +263,7 @@ namespace HandwritingVR
             return res;
         }
         
+        // Method to set angle of line
         private void AngleCalculations()
         {
             Vector2 x = new Vector2(1, 0);
@@ -279,6 +285,7 @@ namespace HandwritingVR
             NS = MembershipFunction(ns);
         }
 
+        // Method to set type of arc (C-like, D-like, U-Like, A-Like)
         private void ArcCalculations()
         {
             var xs = _segBoundBox[0].x;
@@ -320,6 +327,7 @@ namespace HandwritingVR
             
         }
 
+        // Method to set value for O-Like feature
         private void SetOL()
         {
             float xCenter = (_segBoundBox[0].x + _segBoundBox[1].x) / 2;
@@ -367,6 +375,7 @@ namespace HandwritingVR
             // Debug.Log("O-like: "+OL+", with perimeter ol1: "+ol1+", with radius ol2: "+ol2);
         }
 
+        // Method to set isDot variable
         private void IsDot()
         {
             if (_points.Count <= 3)
@@ -378,8 +387,14 @@ namespace HandwritingVR
                 isDot = false;
             }
         }
-        // Hockey stick "Jj"(right/left)"l", Walking stick "f"(right/left)"1"
+        
+        /*
+         Possible features for future:
+         Hockey stick-Like "Jj"(right/left)"l",
+         Walking stick-Like "f"(right/left)"1" 
+         */
 
+        // Method to get fuzzy set of given value
         private string MembershipFunction(float f)
         {
             if (0 <= f && f <= 0.0835f)
@@ -422,6 +437,7 @@ namespace HandwritingVR
             }
         }
 
+        // Method to compare how similar segments are
         public int CompareSegments(Segment s)
         {
             int numberOfSameValues = 0;

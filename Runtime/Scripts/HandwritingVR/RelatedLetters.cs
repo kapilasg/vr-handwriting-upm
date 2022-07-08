@@ -4,13 +4,13 @@ using UnityEngine.UI;
 
 namespace HandwritingVR
 {
+    // Class to represent the 4 most similar letters as buttons
     public class RelatedLetters : MonoBehaviour
     {
         public Text letter1;
         public Text letter2;
         public Text letter3;
         public Text letter4;
-        //public DrawingData data;
         public DataManager data;
 
         private void Update()

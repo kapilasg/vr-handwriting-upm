@@ -6,6 +6,7 @@ using UnityEngine.Serialization;
 namespace HandwritingVR
 {
     [Serializable]
+    // Helper classes to store 3D points for evaluation purposes
     public class SegmentPoints3D
     {
         public List<PointsSet3D> listOfSets;
